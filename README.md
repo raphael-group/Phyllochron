@@ -44,7 +44,7 @@ Alternatively, instead of readcount information, Phyllochron can also take in a 
     * Example: `data/AML/input_data/AML-63_timepoints.csv`
 * A comma-delimited file, which has on each line has an edge of the input mutation tree `m_1, m_2` representing the edge from mutation `m_1` to `m_2`. This tree is rooted at vertex `root`. 
     * Example: `data/AML/input_data/AML-63_mutation_tree.csv`
-* A fractional threshold `z` representing the minimum proportion of cells at a sample assigned to a clone for that clone to be present in that sample. For example, `z=0.10` means that at least 10% of cells in a sample must be assigned to a clone for it to be present in that sample.
+* A fractional threshold `z` representing the minimum proportion of cells at a sample assigned to a clone for that clone to be present in that sample. For example, `z = 0.10` means that at least 10% of cells in a sample must be assigned to a clone for it to be present in that sample.
 
 
 <a name="Phyllochron"></a>
