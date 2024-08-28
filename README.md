@@ -1,6 +1,7 @@
 # Phyllochron (Maximum Likelihood Assignment for Longitudinal Reconstruction)
 
 <!-- ![Overview of Phyllochron](phyllochron.png) -->
+![screenshot](phyllochron.png)
 Phyllochron employs an ILP to solve the Maximum Likelihood Longitudinal Assignment Problem to infer a Longitudinally Observed Perfect Phylogeny Time-Labelled Matrix.
 
 Phyllchron takes as input: 
