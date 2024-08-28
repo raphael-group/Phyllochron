@@ -51,9 +51,9 @@ Alternatively, instead of readcount information, Phyllochron can also take in a 
 <a name="Phyllochron"></a>
 ### Phyllochron
 
-    usage: phyllochron.py [-i CHARACTER_MATRIX] [-t TIMEPOINTS] [-o OUTPUT_PREFIX] [-z Z] [-a FP] [-b FN] [--ado ADO] [--time-limit TIME_LIMIT]
+    usage: phyllochron.py [-i CHARACTER_MATRIX] [-t TIMEPOINTS] [--mutation-tree MUTATION_TREE][-o OUTPUT_PREFIX] [-z Z] [-a FP] [-b FN] [--ado ADO] [--time-limit TIME_LIMIT]
 
-           phyllochron.py [-r TOTAL_READS] [-v VARIANT_READS] [-t TIMEPOINTS] [-o OUTPUT_PREFIX] [-z Z] [-a FP] [-b FN] [--ado ADO] [--time-limit TIME_LIMIT]
+           phyllochron.py [-r TOTAL_READS] [-v VARIANT_READS] [-t TIMEPOINTS]  [--mutation-tree MUTATION_TREE] [-o OUTPUT_PREFIX] [-z Z] [-a FP] [-b FN] [--ado ADO] [--time-limit TIME_LIMIT]
 
     required arguments:
       -i CHARACTER_MATRIX   filepath for the character matrix csv file     
@@ -61,6 +61,7 @@ Alternatively, instead of readcount information, Phyllochron can also take in a 
       -r TOTAL_READS   filepath for the total read counts csv file     
       -v VARIANT_READS   filepath for the variant read counts csv file     
       and
+      --mutation-tree MUTATION_TREE filepath for the mutation tree csv file
       -t TIMEPOINTS   filepath for the timepoints file  
       -o OUTPUT_PREFIX filepath indicating the output prefix for all output files
     optional arguments:
@@ -72,7 +73,7 @@ Alternatively, instead of readcount information, Phyllochron can also take in a 
 
 An example of usage is as follows. This command can be run from the directory that contains this README file.
 
-    python src/phyllochron.py -r data/AML/input_data/AML-63_total_readcounts.csv -v data/AML/input_data/AML-63_variant_readcounts.csv -t data/AML/input_data/AML-63_timepoints.csv -o data/AML/output_data/AML-63 -z 0.05 -a 0.01 -b 0.038 --ado 15 --time-limit 1000
+    python src/phyllochron.py -r data/AML/input_data/AML-63_total_readcounts.csv -v data/AML/input_data/AML-63_variant_readcounts.csv -t data/AML/input_data/AML-63_timepoints.csv --mutation-tree data/AML/input_data/AML-63_mutation_tree.csv -o data/AML/output_data/AML-63 -z 0.05 -a 0.01 -b 0.038 --ado 15 --time-limit 1000
 
 <a name="data"></a>
 ### Data
