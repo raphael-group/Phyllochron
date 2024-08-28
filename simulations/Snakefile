@@ -1,0 +1,42 @@
+# simulation snakefile
+configfile: "config.yaml"
+
+seeds = [ i for i in range(config["nseeds"])]
+
+
+
+
+rule all:
+    input:
+      # simulation
+      expand('ground_truth/phyllochron_{t}_{prop}_{sd}_character_matrix.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
+      expand('ground_truth/phyllochron_{t}_{prop}_{sd}_timepoints.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
+      expand('ground_truth/sphyr_{t}_{prop}_{sd}.txt', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
+      expand('ground_truth/scite_{t}_{prop}_{sd}.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
+
+      # SPhyR
+      # SCITE
+      # Phyllochron
+      # Phyllochron-PP
+ 
+
+
+rule simulation_imputation:
+  
+  input:
+        mutation_tree = config['mutation_tree']
+  output:
+        character_matrix="ground_truth/phylochron_{t}_{prop}_{sd}_character_matrix.csv'
+        timepoints="ground_truth/phylochron_{t}_{prop}_{sd}_timepoints.csv'
+        sphyr_file='ground_truth/sphyr_{t}_{prop}_{sd}.txt'
+        scite_file='ground_truth/scite_{t}_{prop}_{sd}.csv'
+   params:
+        prefix="ground_truth/",
+        ncells=config['ncells_imputation'],
+    log:
+        std="ground_truth/{t}_{prop}_{sd}.log", 
+        err="ground_truth/{t}_{prop}_{sd}.err.log",
+    shell:
+        "python ../src/imputation_simulation_engine.py -t {wildcards.t} --sd {wildcards.sd} --ncells {params.ncells} -o {params.prefix}"
+        " --error-rate {wildcards.prop} } --profiles {input.mutation_tree}"
+        " > {log.std} 2> {log.err}"

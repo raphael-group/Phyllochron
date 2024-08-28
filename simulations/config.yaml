@@ -1,0 +1,33 @@
+ntimepoints:
+  - 3
+  - 5
+  - 7
+
+nseeds: 20
+
+ncells_imputation: 2000
+
+ncells_readcount: 100
+
+error_rate_imputation:
+  - 0.01
+  - 0.05
+  - 0.075
+  - 0.10
+  - 0.125 
+  - 0.15
+
+error_rate_readcount:
+  - 0.01
+  - 0.02
+  - 0.03
+  - 0.04
+  - 0.05
+  - 0.06
+
+mutation_tree: 'adversarial_tree.csv'
+
+SCITE_installation: '/n/fs/ragr-data/users/palash/SCITE/scite'
+SPhyR_installation: '/n/fs/ragr-data/users/palash/SPhyR/build/kDPFC'
+COMPASS_installation: '/n/fs/ragr-data/users/aj7381/COMPASS/COMPASS'
+PhyloVar_installation: '/n/fs/ragr-data/users/aj7381/Phylovar/src/phylovar.py'
