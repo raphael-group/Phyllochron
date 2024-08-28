@@ -53,6 +53,8 @@ Alternatively, instead of readcount information, Phyllochron can also take in a 
 
     usage: phyllochron.py [-i CHARACTER_MATRIX] [-t TIMEPOINTS] [-o OUTPUT_PREFIX] [-z Z] [-a FP] [-b FN] [--ado ADO] [--time-limit TIME_LIMIT]
 
+           phyllochron.py [-r TOTAL_READS] [-v VARIANT_READS] [-t TIMEPOINTS] [-o OUTPUT_PREFIX] [-z Z] [-a FP] [-b FN] [--ado ADO] [--time-limit TIME_LIMIT]
+
     required arguments:
       -i CHARACTER_MATRIX   filepath for the character matrix csv file     
       or
