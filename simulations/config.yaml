@@ -6,8 +6,10 @@ ntimepoints:
 nseeds: 20
 
 ncells_imputation: 2000
+threshold_imputation: 0.20
 
 ncells_readcount: 100
+threshold_readcount: 0.20
 
 error_rate_imputation:
   - 0.01
@@ -25,7 +27,11 @@ error_rate_readcount:
   - 0.05
   - 0.06
 
+read_depth: 30
+ado: 15
+
 mutation_tree: 'adversarial_tree.csv'
+nmutations: 5
 
 SCITE_installation: '/n/fs/ragr-data/users/palash/SCITE/scite'
 SPhyR_installation: '/n/fs/ragr-data/users/palash/SPhyR/build/kDPFC'
