@@ -1,0 +1,22 @@
+# AML data snakefile
+configfile: "config.yaml"
+
+import itertools
+
+def filter_combinator(combinator):
+  def filtered_combinator(*args, **kwargs):
+    for wc_comb in combinator(*args, **kwargs):
+      if int(wc_comb[1][-1]) == int(wc_comb[2][-1]):
+        yield wc_comb
+  return filtered_combinator
+
+filtered_product = filter_combinator(itertools.product)
+
+
+rule all:
+    input:
+      # preprocess_loom_files
+      expand('processed_loom_files/{patient_name}-00{timepoint}.allvariants.genotype_modified.txt", patient_name=config[patient_names'], timepoint=, prop=config['error_rate_imputation']),
+
+
+

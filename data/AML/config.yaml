@@ -1,0 +1,12 @@
+patients:
+  - 'AML-63'
+  - 'AML-97'
+
+ntimepoints_AML-63: 5
+ntimepoints_AML-97: 6
+
+
+
+COMPASS_installation: '/n/fs/ragr-data/users/aj7381/COMPASS/COMPASS'
+SPhyR_installation: '/n/fs/ragr-data/users/palash/SPhyR/build/kDPFC'
+

@@ -34,6 +34,10 @@ class solveLongitudinallyObservedPerfectPhylogeny():
         for i in range(len(self.timepoints)):
             self.timepoint_cell_map[self.timepoints[i]].append(i)
         
+        # read count matrices
+        self.df_total_readcounts = df_total_readcounts        
+        self.df_variant_readcounts = df_variant_readcounts        
+
         if df_character_matrix is not None:
             self.mutation_list = list(df_character_matrix.columns)
             self.ncells = len(self.df_character_matrix)
@@ -45,13 +49,10 @@ class solveLongitudinallyObservedPerfectPhylogeny():
 
         self.fp = fp
         self.fn = fn
-        
+        self.z = z
         self.run_pp = run_pp
         
-        # read count matrices
-        self.df_total_readcounts = df_total_readcounts        
-        self.df_variant_readcounts = df_variant_readcounts        
-
+        
         if df_total_readcounts is not None:
             self.cell_list = list(df_total_readcounts.index)
             self.mutation_list = list(df_total_readcounts.columns)
@@ -116,7 +117,6 @@ class solveLongitudinallyObservedPerfectPhylogeny():
 
 
         '''
-
 
         ntimepoints = int(self.ntimepoints)
         nmutations = int(self.nmutations)
@@ -183,7 +183,7 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                     c_t_sum = gp.LinExpr()
                     for cell in self.timepoint_cell_map[t]:
                         c_t_sum += b[cell,j]
-                    model.addConstr(c_t_sum >= self.threshold[t] * tau[j,t])
+                    model.addConstr(c_t_sum >= self.z * self.threshold[t] * tau[j,t])
                     # real data
                     #15
                     #30
