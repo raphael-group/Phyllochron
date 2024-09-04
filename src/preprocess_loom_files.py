@@ -1,14 +1,15 @@
 import loompy
 import argparse
+import sys
+import pandas as pd
 
-def preprocess_loom_files(patient_name, ntimepoints):
+def preprocess_loom_files(args):
     patient_name = args.name
     timepoints = args.t
-    for timepoint in list(range(1,ntimepoints + 1)):
-
+    for timepoint in list(range(1,timepoints + 1)):
         ds = loompy.connect(f'raw_data/{patient_name}-00{timepoint}.loom')
         allid=ds.ra.id
-        df_merged = pandas.DataFrame()
+        df_merged = pd.DataFrame()
         merged_matrix = ds.layer[""][:]
 
         genes = []
@@ -21,7 +22,7 @@ def preprocess_loom_files(patient_name, ntimepoints):
         special_gene_idxs = [i for i in range(merged_matrix.shape[0]) if genes[i] in ["SRSF2", "RUNX1" , "GATA2"]]
         normal_gene_idxs = [i for i in range(merged_matrix.shape[0]) if genes[i] not in ["SRSF2", "RUNX1" , "GATA2"]]
         
-        genotype_layer = ds.layer[""][cial_gene_idxs,:]
+        genotype_layer = ds.layer[""][special_gene_idxs,:]
         ad_layer = ds.layer["AD"][special_gene_idxs,:]
         dp_layer = ds.layer["DP"][special_gene_idxs,:]
 
@@ -43,12 +44,36 @@ def preprocess_loom_files(patient_name, ntimepoints):
         raw_vafs[dp_layer < 5] = 3
         merged_matrix[normal_gene_idxs,:] = raw_vafs
 
-        outname = f"/n/fs/ragr-data/users/aj7381/{patient_name}-00{timepoint}.allvariants.genotype_modified.txt"
+        outname = f"{args.o}-00{timepoint}.allvariants.genotype_modified.txt"
 
-        df_merged = pandas.DataFrame(merged_matrix)
+        df_merged = pd.DataFrame(merged_matrix)
         df_merged.index = allid
-        df_merged.to_csv(args.o, sep="\t", header=False)
+        df_merged.to_csv(outname, sep="\t", header=False)
 
+        ds.close()
+
+    for sample in list(range(1,timepoints + 1)):
+        ds = loompy.connect(f'raw_data/{patient_name}-00{sample}.loom')
+        allid=ds.ra.id
+        df_merged = pd.DataFrame()
+        merged_matrix = ds.layer[""][:]
+    
+        genes = []
+        for i in range(merged_matrix.shape[0]):
+            if len(str(ds.ra.amplicon[i]).split('_')) > 1:
+                genes.append(str(ds.ra.amplicon[i]).split('_')[1])
+            else:
+                genes.append(str(ds.ra.amplicon[i]))
+        
+        outname = f"processed_loom_files/{patient_name}-00{sample}.variant_readcounts.csv"
+        df_merged = pd.DataFrame(ds.layer["AD"][:])
+        df_merged.index = allid
+        df_merged.to_csv(outname, sep="\t", header=False)
+
+        outname = f"processed_loom_files/{patient_name}-00{sample}.total_readcounts.csv"
+        df_merged = pd.DataFrame(ds.layer["DP"][:])
+        df_merged.index = allid
+        df_merged.to_csv(outname, sep="\t", header=False)
         ds.close()
 
 
@@ -57,8 +82,8 @@ if __name__ == "__main__":
 
   parser = argparse.ArgumentParser()
   parser.add_argument('-t', type=int, help='number of timepoints sampled')
-  parser.add_argument('--name', type=int, help='patient name')
-  parser.add_argument('-o', type=str, help='filepath of output genotype file')
+  parser.add_argument('--name', type=str, help='patient name')
+  parser.add_argument('-o', type=str, help='filepath prefix of output genotype file')
 
   args = parser.parse_args(None if sys.argv[1:] else ['-h']) 
-  main(args)
+  preprocess_loom_files(args)

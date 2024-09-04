@@ -30,11 +30,11 @@ rule all:
       expand('SCITE/scite_{t}_{prop}_{sd}_ml0.gv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
       # Phyllochron
       expand('Phyllochron/phyllochron_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
-      expand('Phyllochron_RC/phyllochron_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
+      expand('Phyllochron_RC/phyllochron_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
 
       # Phyllochron-PP
       expand('Phyllochron_PP/phyllochron_pp_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
-      expand('Phyllochron_PP_RC/phyllochron_pp_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
+      expand('Phyllochron_PP_RC/phyllochron_pp_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
 
       # PhyloVar
       expand('PhyloVar/phylovar_{t}_{prop}_{sd}/snv.vcf.mat', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
@@ -153,6 +153,7 @@ rule compass:
         compass_install=config['COMPASS_installation'],
         input_prefix='ground_truth_rc/compass_{t}_{prop}_{sd}',
         output_prefix='COMPASS/compass_{t}_{prop}_{sd}',
+        error_rate=lambda wildcards: float(wildcards.prop)
   log:
         std="COMPASS/{t}_{prop}_{sd}.log", 
         err="COMPASS/{t}_{prop}_{sd}.err.log",
@@ -160,7 +161,7 @@ rule compass:
         output_assignment='COMPASS/compass_{t}_{prop}_{sd}_cellAssignments.tsv',
         output_genotype='COMPASS/compass_{t}_{prop}_{sd}_nodes_genotypes.tsv',
   shell:
-        "{params.compass_install} -i {params.input_prefix} -o {params.output_prefix} --nchains 40 --chainlength 500 --CNA 0"
+        "{params.compass_install} -i {params.input_prefix} -o {params.output_prefix} --nchains 40 --chainlength 500 --CNA 0 --seqerror {params.error_rate} --dropoutrate_concentration 15"
         " 1> {log.std} 2> {log.err}"
 
 

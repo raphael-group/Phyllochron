@@ -1,22 +1,273 @@
 # AML data snakefile
 configfile: "config.yaml"
 
-import itertools
-
-def filter_combinator(combinator):
-  def filtered_combinator(*args, **kwargs):
-    for wc_comb in combinator(*args, **kwargs):
-      if int(wc_comb[1][-1]) == int(wc_comb[2][-1]):
-        yield wc_comb
-  return filtered_combinator
-
-filtered_product = filter_combinator(itertools.product)
-
 
 rule all:
     input:
       # preprocess_loom_files
-      expand('processed_loom_files/{patient_name}-00{timepoint}.allvariants.genotype_modified.txt", patient_name=config[patient_names'], timepoint=, prop=config['error_rate_imputation']),
+      expand("processed_loom_files/AML-63-005.allvariants.genotype_modified.txt"),
+      expand("processed_loom_files/AML-97-006.allvariants.genotype_modified.txt"),
+      
+      expand("processed_loom_files/AML-63-005.total_readcounts.csv"),
+      expand("processed_loom_files/AML-97-006.total_readcounts.csv"),
+    
+
+      # select mutations
+      expand("mutation_selection/AML-63_mutations.pkl"),
+      expand("mutation_selection/AML-63_annotations.pkl"),
+
+
+      expand("mutation_selection/AML-97_mutations.pkl"),
+      expand("mutation_selection/AML-97_annotations.pkl"),
+
+      # generate input
+      expand("method_input/AML-63_sphyr.csv"),
+      expand("method_input/AML-63_COMPASS_variants.csv"),
+      expand("method_input/AML-63_total_readcounts.csv"),
+      expand("method_input/AML-63_variant_readcounts.csv"),
+      expand("method_input/AML-63_timepoints.csv"),
+
+      expand("method_input/AML-97_sphyr.csv"),
+      expand("method_input/AML-97_COMPASS_variants.csv"),
+      expand("method_input/AML-97_total_readcounts.csv"),
+      expand("method_input/AML-97_variant_readcounts.csv"),
+      expand("method_input/AML-97_timepoints.csv"),
+
+
+      # Phyllochron
+      expand("Phyllochron/AML-63_B.csv"),
+      expand("Phyllochron/AML-97_B.csv"),
+
+      # SPhyR
+      expand("SPhyR/AML-63_sphyr.csv"),
+      expand("SPhyR/AML-97_sphyr.csv"),
+
+      # COMPASS 
+      expand("COMPASS/AML-63_nodes_genotypes.tsv"), 
+      expand("COMPASS/AML-97_nodes_genotypes.tsv"), 
+
+
+rule preprocess_loom_files_AML_63:
+  params:
+        t=5,
+        name="AML-63",
+        output_prefix='processed_loom_files/AML-63'
+  log:
+        std="processed_loom_files/AML-63.log", 
+        err="processed_loom_files/AML-63.err.log",
+  output:
+        output_genotype_file="processed_loom_files/AML-63-005.allvariants.genotype_modified.txt",
+        readcount_file="processed_loom_files/AML-63-005.total_readcounts.csv",
+  shell:
+        "python ../../src/preprocess_loom_files.py -t {params.t} --name {params.name} -o {params.output_prefix}"
+        " 1> {log.std} 2> {log.err}"
+
+rule preprocess_loom_files_AML_97:
+  input:
+    input_readcount_file="processed_loom_files/AML-63-005.total_readcounts.csv",
+  params:
+        t=6,
+        name="AML-97",
+        output_prefix='processed_loom_files/AML-97'
+  log:
+        std="processed_loom_files/AML-97.log", 
+        err="processed_loom_files/AML-97.err.log",
+  output:
+        output_genotype_file="processed_loom_files/AML-97-006.allvariants.genotype_modified.txt",
+        readcount_file="processed_loom_files/AML-97-006.total_readcounts.csv",
+  shell:
+        "python ../../src/preprocess_loom_files.py -t {params.t} --name {params.name} -o {params.output_prefix}"
+        " 1> {log.std} 2> {log.err}"
+
+rule select_mutations_AML_63:
+  params:
+        t=5,
+        name="AML-63",
+        output_prefix='mutation_selection/AML-63'
+  log:
+        std="mutation_selection/AML-63.log", 
+        err="mutation_selection/AML-63.err.log",
+  output:
+        mutations_of_interest="mutation_selection/AML-63_mutations.pkl",
+        annotations="mutation_selection/AML-63_annotations.pkl",
+  shell:
+        "python ../../src/select_mutations.py -t {params.t} --name {params.name} -o {params.output_prefix}"
+        " 1> {log.std} 2> {log.err}"
+
+rule select_mutations_AML_97:
+  params:
+        t=6,
+        name="AML-97",
+        output_prefix='mutation_selection/AML-97'
+  log:
+        std="mutation_selection/AML-97.log", 
+        err="mutation_selection/AML-97.err.log",
+  output:
+        mutations_of_interest="mutation_selection/AML-97_mutations.pkl",
+        annotations="mutation_selection/AML-97_annotations.pkl",
+  shell:
+        "python ../../src/select_mutations.py -t {params.t} --name {params.name} -o {params.output_prefix}"
+        " 1> {log.std} 2> {log.err}"
+
+rule generate_method_input_AML_63:
+    input:
+      mutations_of_interest="mutation_selection/AML-63_mutations.pkl",
+      output_genotype_file="processed_loom_files/AML-63-005.allvariants.genotype_modified.txt",
+    params:
+        t=5,
+        name="AML-63",
+    log:
+        std="method_input/AML-63.log", 
+        err="method_input/AML-63.err.log",
+    output:
+      SPhyR_file="method_input/AML-63_sphyr.csv",
+      COMPASS_file="method_input/AML-63_COMPASS_variants.csv",
+      total_reads="method_input/AML-63_total_readcounts.csv",
+      variant_reads="method_input/AML-63_variant_readcounts.csv",
+      timepoints="method_input/AML-63_timepoints.csv",
+    shell:
+        "python ../../src/generate_method_input.py -t {params.t} --name {params.name}"
+        " 1> {log.std} 2> {log.err}"
+
+rule generate_method_input_AML_97:
+    input:
+      mutations_of_interest="mutation_selection/AML-97_mutations.pkl",
+      output_genotype_file="processed_loom_files/AML-97-006.allvariants.genotype_modified.txt",
+    params:
+        t=6,
+        name="AML-97",
+    log:
+        std="method_input/AML-97.log", 
+        err="method_input/AML-97.err.log",
+    output:
+      SPhyR_file="method_input/AML-97_sphyr.csv",
+      COMPASS_file="method_input/AML-97_COMPASS_variants.csv",
+      total_reads="method_input/AML-97_total_readcounts.csv",
+      variant_reads="method_input/AML-97_variant_readcounts.csv",
+      timepoints="method_input/AML-97_timepoints.csv",
+    shell:
+        "python ../../src/generate_method_input.py -t {params.t} --name {params.name}"
+        " 1> {log.std} 2> {log.err}"
+
+rule phyllochron_AML_63:
+    input:
+      total_reads="method_input/AML-63_total_readcounts.csv",
+      variant_reads="method_input/AML-63_variant_readcounts.csv",
+      timepoints="method_input/AML-63_timepoints.csv",
+      mutation_tree="raw_data/AML-63_tree.csv"
+    params:
+        fp=0.01,
+        fn=0.037,
+        z=0.005,
+        output_prefix="Phyllochron/AML-63",
+    log:
+        std="Phyllochron/AML-63.log", 
+        err="Phyllochron/AML-63.err.log",
+    output:
+      character_matrix="Phyllochron/AML-63_B.csv",
+    shell:
+        "python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn}"
+        " 1> {log.std} 2> {log.err}"
+
+rule phyllochron_AML_97:
+    input:
+      total_reads="method_input/AML-97_total_readcounts.csv",
+      variant_reads="method_input/AML-97_variant_readcounts.csv",
+      timepoints="method_input/AML-97_timepoints.csv",
+      mutation_tree="raw_data/AML-97_tree.csv"
+    params:
+        fp=0.01,
+        fn=0.038,
+        z=0.005,
+        output_prefix="Phyllochron/AML-97",
+    log:
+        std="Phyllochron/AML-97.log", 
+        err="Phyllochron/AML-97.err.log",
+    output:
+      character_matrix="Phyllochron/AML-97_B.csv",
+    shell:
+        "python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn}"
+        " 1> {log.std} 2> {log.err}"
+
+
+rule sphyr_AML_63:
+    input:
+      SPhyR_file="method_input/AML-63_sphyr.csv",
+    params:
+      sphyr_installation=config["SPhyR_installation"],
+      fp=0.01,
+      fn=0.037,
+      ncells=25757,
+      nclusters=7,
+    log:
+      std="SPhyR/AML-63.log", 
+      err="SPhyR/AML-63.err.log",
+    output:
+      output_matrix="SPhyR/AML-63_sphyr.csv"
+    shell:
+      "{params.sphyr_installation} {input.SPhyR_file} {output.output_matrix} -a {params.fp} -b {params.fn} -lT {params.ncells} -lC {params.nclusters} -k 0"
+      " 1> {log.std} 2> {log.err}"
+
+rule sphyr_AML_97:
+    input:
+      SPhyR_file="method_input/AML-97_sphyr.csv",
+    params:
+      sphyr_installation=config["SPhyR_installation"],
+      fp=0.01,
+      fn=0.038,
+      ncells=19332,
+      nclusters=9,
+    log:
+      std="SPhyR/AML-97.log", 
+      err="SPhyR/AML-97.err.log",
+    output:
+      output_matrix="SPhyR/AML-97_sphyr.csv"
+    shell:
+      "{params.sphyr_installation} {input.SPhyR_file} {output.output_matrix} -a {params.fp} -b {params.fn} -lT {params.ncells} -lC {params.nclusters} -k 0"
+      " 1> {log.std} 2> {log.err}"
+
+
+rule compass_AML_63:
+    input:
+      COMPASS_file="method_input/AML-63_COMPASS_variants.csv",
+    params:
+      compass_installation=config["COMPASS_installation"],
+      nchains=40,
+      chainlength=500,
+      seqerror=0.047,
+      input_prefix='method_input/AML-63_COMPASS',
+      output_prefix='COMPASS/AML-63',
+    log:
+      std="COMPASS/AML-63.log", 
+      err="COMPASS/AML-63.err.log",
+    output:
+      output_matrix="COMPASS/AML-63_nodes_genotypes.tsv"
+    shell:
+      "{params.compass_installation} -i {params.input_prefix} -o {params.output_prefix} --nchains {params.nchains} --chainlength {params.chainlength} --seqerror {params.seqerror} --CNA 0"
+      " 1> {log.std} 2> {log.err}"
+
+
+rule compass_AML_97:
+    input:
+      COMPASS_file="method_input/AML-97_COMPASS_variants.csv",
+    params:
+      compass_installation=config["COMPASS_installation"],
+      nchains=40,
+      chainlength=500,
+      seqerror=0.048,
+      input_prefix='method_input/AML-97_COMPASS',
+      output_prefix='COMPASS/AML-97',
+    log:
+      std="COMPASS/AML-97.log", 
+      err="COMPASS/AML-97.err.log",
+    output:
+      output_matrix="COMPASS/AML-97_nodes_genotypes.tsv"
+    shell:
+      "{params.compass_installation} -i {params.input_prefix} -o {params.output_prefix} --nchains {params.nchains} --chainlength {params.chainlength} --seqerror {params.seqerror} --CNA 0"
+      " 1> {log.std} 2> {log.err}"
+
 
 
 

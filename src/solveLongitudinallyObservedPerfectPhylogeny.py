@@ -183,7 +183,7 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                     c_t_sum = gp.LinExpr()
                     for cell in self.timepoint_cell_map[t]:
                         c_t_sum += b[cell,j]
-                    model.addConstr(c_t_sum >= self.z * self.threshold[t] * tau[j,t])
+                    model.addConstr(c_t_sum >= int(self.z * self.threshold[t]) * tau[j,t])
                     # real data
                     #15
                     #30
@@ -248,7 +248,6 @@ class solveLongitudinallyObservedPerfectPhylogeny():
         
         model.optimize()
         solb = np.rint(np.reshape(model.getAttr('x', b).values(), (ncells, nclones)))
-        tau = np.reshape(model.getAttr('x', tau).values(), (nclones, ntimepoints))
         sol = np.zeros((ncells, nmutations))
 
         self.likelihood = model.getObjective()
