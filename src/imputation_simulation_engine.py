@@ -40,41 +40,42 @@ def main(args):
                     else:
                         character_matrix[tp * ncells + i] = profiles[j]
 
-        og_character_matrix = character_matrix.copy()
-        df = pd.DataFrame(data=og_character_matrix, index=list(range(t * ncells)), columns=mutation_names)
-        df.to_csv(f'{prefix}gt_imputation_{t}_{error_rate}_{sd}.csv')
+    og_character_matrix = character_matrix.copy()
+    
+    df = pd.DataFrame(data=og_character_matrix, index=list(range(t * ncells)), columns=mutation_names)
+    df.to_csv(f'{prefix}gt_imputation_{t}_{error_rate}_{sd}.csv')
 
-        num_to_flip = int(error_rate * character_matrix.size)
+    num_to_flip = int(error_rate * character_matrix.size)
 
-        indices_to_flip = np.random.choice(character_matrix.size, size=num_to_flip, replace=False)
+    indices_to_flip = np.random.choice(character_matrix.size, size=num_to_flip, replace=False)
 
-        binary_array_flat = character_matrix.flatten()
-        binary_array_flat[indices_to_flip] = 1 - binary_array_flat[indices_to_flip]
-        character_matrix = binary_array_flat.reshape(character_matrix.shape)
+    binary_array_flat = character_matrix.flatten()
+    binary_array_flat[indices_to_flip] = 1 - binary_array_flat[indices_to_flip]
+    character_matrix = binary_array_flat.reshape(character_matrix.shape)
 
-        permuted_character_matrix = character_matrix.copy()
+    permuted_character_matrix = character_matrix.copy()
 
 
-        f = open(f'{prefix}sphyr_{t}_{error_rate}_{sd}.txt', "w")
-        f.write(f'{int(t * ncells)}\n')
-        f.write(f'{nmutations}\n')
-        for r in range(character_matrix.shape[0]):
-            f.write("\t".join(map(str,character_matrix[r].flatten())))
-            f.write("\n")
-        
-        
-        char_mat = character_matrix[:,:]
-        np.savetxt(f'{prefix}scite_{t}_{error_rate}_{sd}.csv', char_mat.T, delimiter=' ', fmt='%d')
-        
-        timepoints = []
-        for tp in range(t):
-            for i in range(ncells):
-                timepoints.append(tp)
-        df = pd.DataFrame(data=timepoints, index=list(range(t * ncells)), columns=['timepoints'])
-        df.to_csv(f'{prefix}phyllochron_{t}_{error_rate}_{sd}_timepoints.csv')
+    f = open(f'{prefix}sphyr_{t}_{error_rate}_{sd}.txt', "w")
+    f.write(f'{int(t * ncells)}\n')
+    f.write(f'{nmutations}\n')
+    for r in range(character_matrix.shape[0]):
+        f.write("\t".join(map(str,character_matrix[r].flatten())))
+        f.write("\n")
+    
+    
+    char_mat = character_matrix[:,:]
+    np.savetxt(f'{prefix}scite_{t}_{error_rate}_{sd}.csv', char_mat.T, delimiter=' ', fmt='%d')
+    
+    timepoints = []
+    for tp in range(t):
+        for i in range(ncells):
+            timepoints.append(tp)
+    df = pd.DataFrame(data=timepoints, index=list(range(t * ncells)), columns=['timepoints'])
+    df.to_csv(f'{prefix}phyllochron_{t}_{error_rate}_{sd}_timepoints.csv')
 
-        df = pd.DataFrame(data=character_matrix, index=list(range(t * ncells)), columns=mutation_names)
-        df.to_csv(f'{prefix}phyllochron_{t}_{error_rate}_{sd}_character_matrix.csv')
+    df = pd.DataFrame(data=character_matrix, index=list(range(t * ncells)), columns=mutation_names)
+    df.to_csv(f'{prefix}phyllochron_{t}_{error_rate}_{sd}_character_matrix.csv')
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()

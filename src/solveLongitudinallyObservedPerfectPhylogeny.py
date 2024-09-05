@@ -89,24 +89,7 @@ class solveLongitudinallyObservedPerfectPhylogeny():
 
     def solveML_LA(self):
         '''
-        first_self.mutation_tree = np.array([[0,0,0,0,0,0],
-            [0,0,0,0,1,0],
-            [0,0,0,0,1,1],
-            [0,0,1,0,1,1],
-            [0,1,1,0,1,1],
-            [0,1,1,1,1,1],
-            [1,1,1,0,1,1],
-            ])
 
-        first_self.mutation_tree = np.array([[0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 1, 0, 1],
-            [0, 0, 1, 0, 0, 1, 1, 1],
-            [0, 0, 1, 0, 1, 1, 1, 1],
-            [0, 1, 1, 0, 1, 1, 1, 1],
-            [1, 1, 1, 0, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1]]
-           )
         first_self.mutation_tree = np.array([[0,0,0,0,0],
             [0,0,0,0,1],
             [0,0,0,1,1],
