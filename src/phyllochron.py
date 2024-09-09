@@ -62,7 +62,7 @@ def main(args):
     if args.r is not None:
         solver = solveLongitudinallyObservedPerfectPhylogeny(mutation_tree, timepoints=timepoints, df_total_readcounts=df_total_readcounts,
                                        df_variant_readcounts=df_variant_readcounts, fp=fp, fn=fn,
-                                       ado_precision = ado, z=args.z, prefix=args.o, run_pp = run_pp)
+                                       ado_precision = ado, z=args.z, prefix=args.o, run_pp = run_pp, use_COMPASS_likelihood = args.run_compass_likelihood)
     else:
         solver = solveLongitudinallyObservedPerfectPhylogeny(mutation_tree, timepoints=timepoints, df_character_matrix=df_character_matrix,
                                         fp=fp, fn=fn, ado_precision = ado, z=args.z, prefix=args.o, run_pp = run_pp)
@@ -92,6 +92,7 @@ if __name__ == "__main__":
     parser.add_argument('-o', type=str, help='output prefix', required=True)
     parser.add_argument('--time-limit', type=int, help='time limit in seconds [1800]', default = 1800)
     parser.add_argument('--run-pp', type=bool, help='run Phyllochron without longitudinal constraints?', default = False)
+    parser.add_argument('--run-compass-likelihood', type=bool, help='run Phyllochron with COMPASS likelihood', default = False)
 
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
     if args.mutation_tree is None:

@@ -6,3 +6,5 @@ patient_names:
 COMPASS_installation: '/n/fs/ragr-data/users/aj7381/COMPASS/COMPASS'
 SPhyR_installation: '/n/fs/ragr-data/users/palash/SPhyR/build/kDPFC'
 
+
+threshold_parameter: 0.0005

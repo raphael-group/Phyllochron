@@ -12,12 +12,13 @@ import pandas as pd
 import networkx as nx
 import itertools
 from scipy.stats import betabinom
+from scipy.special import gammaln, logsumexp
 from collections import defaultdict
 
 class solveLongitudinallyObservedPerfectPhylogeny():
 
     def __init__(self, mutation_tree, timepoints = None, df_character_matrix = None, df_total_readcounts = None, df_variant_readcounts = None, snp_list = [],
-                 fp = None, fn = None, ado_precision = 15, z = 0.05, threads = 1, timelimit = 1800, verbose = True, prefix=None, run_pp = False):
+                 fp = None, fn = None, ado_precision = 15, z = 0.05, threads = 1, timelimit = 1800, verbose = True, prefix=None, run_pp = False, use_COMPASS_likelihood = False):
         
         self.mutation_tree = mutation_tree
         
@@ -51,12 +52,12 @@ class solveLongitudinallyObservedPerfectPhylogeny():
         self.fn = fn
         self.z = z
         self.run_pp = run_pp
-        
+        self.use_COMPASS_likelihood = use_COMPASS_likelihood
         
         if df_total_readcounts is not None:
             self.cell_list = list(df_total_readcounts.index)
             self.mutation_list = list(df_total_readcounts.columns)
-
+            print(fp)
             bb_alpha = fp * ado_precision
             bb_beta = (1 - fp) * ado_precision
             
@@ -65,9 +66,16 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                 for mut_idx, mutation in enumerate(self.mutation_list):
                     total_reads = df_total_readcounts.loc[cell][mutation]
                     variant_reads = df_variant_readcounts.loc[cell][mutation]
-                    if total_reads > 0:
-                        coeff = betabinom.logpmf(variant_reads, total_reads, 1, 1) - betabinom.logpmf(variant_reads, total_reads, bb_alpha, bb_beta)
+
+                    if self.use_COMPASS_likelihood:
+                        coeff = solveLongitudinallyObservedPerfectPhylogeny.compute_SNV_loglikelihoods(1, 1, total_reads - variant_reads,  variant_reads, cell_idx, 0.001, 0.001, self.fp + self.fn, 1)[0][0] - solveLongitudinallyObservedPerfectPhylogeny.compute_SNV_loglikelihoods(2, 0, total_reads - variant_reads,  variant_reads, cell_idx, 0.001, 0.001, self.fp + self.fn, 1)[0][0]
                         coeff_mat[cell_idx, mut_idx] = coeff
+
+                    else:
+                        if total_reads > 0:
+                            coeff = betabinom.logpmf(variant_reads, total_reads, 1, 1) - betabinom.logpmf(variant_reads, total_reads, bb_alpha, bb_beta)
+                            coeff_mat[cell_idx, mut_idx] = coeff
+                    
             self.coeff_mat = coeff_mat                    
         else:
             self.coeff_mat = None
@@ -307,7 +315,91 @@ class solveLongitudinallyObservedPerfectPhylogeny():
             solT_cell.add_edge(curr_node, cell_id)   
 
         return solT_mut, solT_cell
+	
+    @staticmethod
+    def compute_SNV_loglikelihoods(c_ref, c_alt, r, v, locus, dropout_rate_ref, dropout_rate_alt, sequencing_error_rate, n_cells):
+        def log_n_choose_k(n, k):
+            return gammaln(n + 1) - (gammaln(k + 1) + gammaln(n - k + 1))
+        # If homozygous, the copy number of the only allele is irrelevant for the allelic proportion
+        if (c_ref==0):
+            c_alt=1
+        elif (c_alt==0):
+            c_ref==1
 
+
+        discretized_dropout_rate_ref = round(dropout_rate_ref * 1000)
+        discretized_dropout_rate_alt = round(dropout_rate_alt * 1000)
+        
+
+        dropout_rate_ref = discretized_dropout_rate_ref / 1000.0
+        dropout_rate_alt = discretized_dropout_rate_alt / 1000.0
+
+        likelihood_alleles_cells = [[] for _ in range((c_ref + 1) * (c_alt + 1) - 1)]
+        dropoutscores = [0.0] * n_cells
+
+        idx = 0
+        for k in range(c_ref):
+            for l in range(c_alt + 1):
+                if k == 0 and l == 0:
+                    continue
+                            
+                seq_error_rates = [0.0] * n_cells
+                eps1 = sequencing_error_rate
+                eps2 = sequencing_error_rate
+                omega = 50 if k == 0 or l == 0 else 8
+                
+
+                f = (1.0 * l / (k + l)) * (1 - eps2) + (1.0 * k / (k + l)) * eps1
+
+                for j in range(n_cells):
+                    ref_count = r
+                    alt_count = v
+                    likelihood_dropout = (gammaln(alt_count + omega * f) + 
+                                          gammaln(ref_count + omega * (1 - f)) - 
+                                          gammaln(alt_count + ref_count + omega) - 
+                                          gammaln(omega * f) - 
+                                          gammaln(omega * (1 - f)) + 
+                                          gammaln(omega))
+                    dropoutscores[j] = likelihood_dropout
+
+
+                likelihood_alleles_cells[idx] = [0.0] * n_cells
+                dropout_prob = (log_n_choose_k(c_ref, k) + log_n_choose_k(c_alt, l) + 
+                                (c_ref - k) * np.log(dropout_rate_ref) + 
+                                k * np.log(1 - dropout_rate_ref) + 
+                                (c_alt - l) * np.log(dropout_rate_alt) + 
+                                l * np.log(1 - dropout_rate_alt))
+                all_dropout_prob = (dropout_rate_ref ** c_ref) * (dropout_rate_alt ** c_alt)
+                dropout_prob -= np.log(1 - all_dropout_prob)
+
+                for j in range(n_cells):
+                    likelihood_alleles_cells[idx][j] = dropoutscores[j] + dropout_prob
+
+                idx += 1
+                
+        if c_alt == 0:
+            scores_cells = logsumexp(likelihood_alleles_cells[:-1], axis=0)
+        else:
+            scores_cells = logsumexp(likelihood_alleles_cells[:-2], axis=0)
+
+        dropoutsref = [0.0] * n_cells
+        dropoutsalt = [0.0] * n_cells
+
+        idx = 0
+        for k in range(c_ref):
+            for l in range(c_alt + 1):
+                if k == 0 and l == 0:
+                    continue
+
+                for j in range(n_cells):
+                    config_prob = np.exp(likelihood_alleles_cells[idx][j] - scores_cells[j])
+                    dropoutsref[j] += (c_ref - k) * config_prob
+                    dropoutsalt[j] += (c_alt - l) * config_prob
+
+                idx += 1
+
+        return scores_cells, dropoutsref, dropoutsalt
+    
     def writeDOT(self, dot_file, withcells=True):
         if withcells is True:
             writeTree = self.solT_cell

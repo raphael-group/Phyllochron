@@ -38,6 +38,11 @@ rule all:
       expand("Phyllochron/AML-63_B.csv"),
       expand("Phyllochron/AML-97_B.csv"),
 
+      # Phyllochron w/ COMPASS likelihood
+      expand("Phyllochron_COMPASS/AML-63_B.csv"),
+      expand("Phyllochron_COMPASS/AML-97_B.csv"),
+
+
       # SPhyR
       expand("SPhyR/AML-63_sphyr.csv"),
       expand("SPhyR/AML-97_sphyr.csv"),
@@ -158,7 +163,7 @@ rule phyllochron_AML_63:
     params:
         fp=0.01,
         fn=0.037,
-        z=0.005,
+        z=config['threshold_parameter'],
         output_prefix="Phyllochron/AML-63",
     log:
         std="Phyllochron/AML-63.log", 
@@ -179,7 +184,7 @@ rule phyllochron_AML_97:
     params:
         fp=0.01,
         fn=0.038,
-        z=0.005,
+        z=config['threshold_parameter'],
         output_prefix="Phyllochron/AML-97",
     log:
         std="Phyllochron/AML-97.log", 
@@ -189,6 +194,48 @@ rule phyllochron_AML_97:
     shell:
         "python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
         " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn}"
+        " 1> {log.std} 2> {log.err}"
+
+rule phyllochron_compass_AML_63:
+    input:
+      total_reads="method_input/AML-63_total_readcounts.csv",
+      variant_reads="method_input/AML-63_variant_readcounts.csv",
+      timepoints="method_input/AML-63_timepoints.csv",
+      mutation_tree="raw_data/AML-63_tree.csv"
+    params:
+        fp=0.01,
+        fn=0.037,
+        z=config['threshold_parameter'],
+        output_prefix="Phyllochron_COMPASS/AML-63",
+    log:
+        std="Phyllochron_COMPASS/AML-63.log", 
+        err="Phyllochron_COMPASS/AML-63.err.log",
+    output:
+      character_matrix="Phyllochron_COMPASS/AML-63_B.csv",
+    shell:
+        "python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn} --run-compass-likelihood True"
+        " 1> {log.std} 2> {log.err}"
+
+rule phyllochron_compass_AML_97:
+    input:
+      total_reads="method_input/AML-97_total_readcounts.csv",
+      variant_reads="method_input/AML-97_variant_readcounts.csv",
+      timepoints="method_input/AML-97_timepoints.csv",
+      mutation_tree="raw_data/AML-97_tree.csv"
+    params:
+        fp=0.01,
+        fn=0.038,
+        z=config['threshold_parameter'],
+        output_prefix="Phyllochron_COMPASS/AML-97",
+    log:
+        std="Phyllochron_COMPASS/AML-97.log", 
+        err="Phyllochron_COMPASS/AML-97.err.log",
+    output:
+      character_matrix="Phyllochron_COMPASS/AML-97_B.csv",
+    shell:
+        "python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn} --run-compass-likelihood True"
         " 1> {log.std} 2> {log.err}"
 
 
@@ -234,8 +281,8 @@ rule compass_AML_63:
       COMPASS_file="method_input/AML-63_COMPASS_variants.csv",
     params:
       compass_installation=config["COMPASS_installation"],
-      nchains=40,
-      chainlength=500,
+      nchains=100,
+      chainlength=2000,
       seqerror=0.047,
       input_prefix='method_input/AML-63_COMPASS',
       output_prefix='COMPASS/AML-63',
@@ -245,7 +292,7 @@ rule compass_AML_63:
     output:
       output_matrix="COMPASS/AML-63_nodes_genotypes.tsv"
     shell:
-      "{params.compass_installation} -i {params.input_prefix} -o {params.output_prefix} --nchains {params.nchains} --chainlength {params.chainlength} --seqerror {params.seqerror} --CNA 0"
+      "{params.compass_installation} -i {params.input_prefix} -o {params.output_prefix} --nchains {params.nchains} --chainlength {params.chainlength} --seqerror {params.seqerror} --CNA 0 -d 0"
       " 1> {log.std} 2> {log.err}"
 
 
@@ -254,8 +301,8 @@ rule compass_AML_97:
       COMPASS_file="method_input/AML-97_COMPASS_variants.csv",
     params:
       compass_installation=config["COMPASS_installation"],
-      nchains=40,
-      chainlength=500,
+      nchains=100,
+      chainlength=2000,
       seqerror=0.048,
       input_prefix='method_input/AML-97_COMPASS',
       output_prefix='COMPASS/AML-97',
@@ -265,7 +312,7 @@ rule compass_AML_97:
     output:
       output_matrix="COMPASS/AML-97_nodes_genotypes.tsv"
     shell:
-      "{params.compass_installation} -i {params.input_prefix} -o {params.output_prefix} --nchains {params.nchains} --chainlength {params.chainlength} --seqerror {params.seqerror} --CNA 0"
+      "{params.compass_installation} -i {params.input_prefix} -o {params.output_prefix} --nchains {params.nchains} --chainlength {params.chainlength} --seqerror {params.seqerror} --CNA 0 -d 0"
       " 1> {log.std} 2> {log.err}"
 
 
