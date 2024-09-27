@@ -7,10 +7,16 @@ rule all:
       # preprocess_loom_files
       expand("processed_loom_files/AML-63-005.allvariants.genotype_modified.txt"),
       expand("processed_loom_files/AML-97-006.allvariants.genotype_modified.txt"),
+      expand("processed_loom_files/AML-99-005.allvariants.genotype_modified.txt"),
+      expand("processed_loom_files/AML-88-003.allvariants.genotype_modified.txt"),
       
       expand("processed_loom_files/AML-63-005.total_readcounts.csv"),
       expand("processed_loom_files/AML-97-006.total_readcounts.csv"),
-    
+      expand("processed_loom_files/AML-99-005.total_readcounts.csv"),
+      expand("processed_loom_files/AML-88-003.total_readcounts.csv"),
+
+
+
 
       # select mutations
       expand("mutation_selection/AML-63_mutations.pkl"),
@@ -19,6 +25,13 @@ rule all:
 
       expand("mutation_selection/AML-97_mutations.pkl"),
       expand("mutation_selection/AML-97_annotations.pkl"),
+
+
+      expand("mutation_selection/AML-99_mutations.pkl"),
+      expand("mutation_selection/AML-99_annotations.pkl"),
+      
+      expand("mutation_selection/AML-88_mutations.pkl"),
+      expand("mutation_selection/AML-88_annotations.pkl"),
 
       # generate input
       expand("method_input/AML-63_sphyr.csv"),
@@ -32,16 +45,36 @@ rule all:
       expand("method_input/AML-97_total_readcounts.csv"),
       expand("method_input/AML-97_variant_readcounts.csv"),
       expand("method_input/AML-97_timepoints.csv"),
+      
+      expand("method_input/AML-99_sphyr.csv"),
+      expand("method_input/AML-99_COMPASS_variants.csv"),
+      expand("method_input/AML-99_total_readcounts.csv"),
+      expand("method_input/AML-99_variant_readcounts.csv"),
+      expand("method_input/AML-99_timepoints.csv"),
 
+      expand("method_input/AML-88_sphyr.csv"),
+      expand("method_input/AML-88_COMPASS_variants.csv"),
+      expand("method_input/AML-88_total_readcounts.csv"),
+      expand("method_input/AML-88_variant_readcounts.csv"),
+      expand("method_input/AML-88_timepoints.csv"),
 
       # Phyllochron
       expand("Phyllochron/AML-63_B.csv"),
       expand("Phyllochron/AML-97_B.csv"),
+      expand("Phyllochron/AML-99_B.csv"),
+      expand("Phyllochron/AML-88_B.csv"),
 
       # Phyllochron w/ COMPASS likelihood
       expand("Phyllochron_COMPASS/AML-63_B.csv"),
       expand("Phyllochron_COMPASS/AML-97_B.csv"),
+      expand("Phyllochron_COMPASS/AML-99_B.csv"),
+      expand("Phyllochron_COMPASS/AML-88_B.csv"),
 
+      # Phyllochron w/ COMPASS assignment probs
+      expand("Phyllochron_Probs/AML-63_B.csv"),
+      expand("Phyllochron_Probs/AML-97_B.csv"),
+      expand("Phyllochron_Probs/AML-99_B.csv"),
+      expand("Phyllochron_Probs/AML-88_B.csv"),
 
       # SPhyR
       expand("SPhyR/AML-63_sphyr.csv"),
@@ -50,6 +83,8 @@ rule all:
       # COMPASS 
       expand("COMPASS/AML-63_nodes_genotypes.tsv"), 
       expand("COMPASS/AML-97_nodes_genotypes.tsv"), 
+      expand("COMPASS/AML-99_nodes_genotypes.tsv"), 
+      expand("COMPASS/AML-88_nodes_genotypes.tsv"), 
 
 
 rule preprocess_loom_files_AML_63:
@@ -68,8 +103,6 @@ rule preprocess_loom_files_AML_63:
         " 1> {log.std} 2> {log.err}"
 
 rule preprocess_loom_files_AML_97:
-  input:
-    input_readcount_file="processed_loom_files/AML-63-005.total_readcounts.csv",
   params:
         t=6,
         name="AML-97",
@@ -83,6 +116,39 @@ rule preprocess_loom_files_AML_97:
   shell:
         "python ../../src/preprocess_loom_files.py -t {params.t} --name {params.name} -o {params.output_prefix}"
         " 1> {log.std} 2> {log.err}"
+
+
+rule preprocess_loom_files_AML_99:
+  params:
+        t=5,
+        name="AML-99",
+        output_prefix='processed_loom_files/AML-99'
+  log:
+        std="processed_loom_files/AML-99.log", 
+        err="processed_loom_files/AML-99.err.log",
+  output:
+        output_genotype_file="processed_loom_files/AML-99-005.allvariants.genotype_modified.txt",
+        readcount_file="processed_loom_files/AML-99-005.total_readcounts.csv",
+  shell:
+        "python ../../src/preprocess_loom_files.py -t {params.t} --name {params.name} -o {params.output_prefix}"
+        " 1> {log.std} 2> {log.err}"
+
+rule preprocess_loom_files_AML_88:
+  params:
+        t=3,
+        name="AML-88",
+        output_prefix='processed_loom_files/AML-88'
+  log:
+        std="processed_loom_files/AML-88.log", 
+        err="processed_loom_files/AML-88.err.log",
+  output:
+        output_genotype_file="processed_loom_files/AML-88-003.allvariants.genotype_modified.txt",
+        readcount_file="processed_loom_files/AML-88-003.total_readcounts.csv",
+  shell:
+        "python ../../src/preprocess_loom_files.py -t {params.t} --name {params.name} -o {params.output_prefix}"
+        " 1> {log.std} 2> {log.err}"
+
+
 
 rule select_mutations_AML_63:
   params:
@@ -113,6 +179,39 @@ rule select_mutations_AML_97:
   shell:
         "python ../../src/select_mutations.py -t {params.t} --name {params.name} -o {params.output_prefix}"
         " 1> {log.std} 2> {log.err}"
+
+
+rule select_mutations_AML_99:
+  params:
+        t=5,
+        name="AML-99",
+        output_prefix='mutation_selection/AML-99'
+  log:
+        std="mutation_selection/AML-99.log", 
+        err="mutation_selection/AML-99.err.log",
+  output:
+        mutations_of_interest="mutation_selection/AML-99_mutations.pkl",
+        annotations="mutation_selection/AML-99_annotations.pkl",
+  shell:
+        "python ../../src/select_mutations.py -t {params.t} --name {params.name} -o {params.output_prefix}"
+        " 1> {log.std} 2> {log.err}"
+
+rule select_mutations_AML_88:
+  params:
+        t=3,
+        name="AML-88",
+        output_prefix='mutation_selection/AML-88'
+  log:
+        std="mutation_selection/AML-88.log", 
+        err="mutation_selection/AML-88.err.log",
+  output:
+        mutations_of_interest="mutation_selection/AML-88_mutations.pkl",
+        annotations="mutation_selection/AML-88_annotations.pkl",
+  shell:
+        "python ../../src/select_mutations.py -t {params.t} --name {params.name} -o {params.output_prefix}"
+        " 1> {log.std} 2> {log.err}"
+
+
 
 rule generate_method_input_AML_63:
     input:
@@ -154,12 +253,55 @@ rule generate_method_input_AML_97:
         "python ../../src/generate_method_input.py -t {params.t} --name {params.name}"
         " 1> {log.std} 2> {log.err}"
 
+rule generate_method_input_AML_99:
+    input:
+      mutations_of_interest="mutation_selection/AML-99_mutations.pkl",
+      output_genotype_file="processed_loom_files/AML-99-005.allvariants.genotype_modified.txt",
+    params:
+        t=5,
+        name="AML-99",
+    log:
+        std="method_input/AML-99.log", 
+        err="method_input/AML-99.err.log",
+    output:
+      SPhyR_file="method_input/AML-99_sphyr.csv",
+      COMPASS_file="method_input/AML-99_COMPASS_variants.csv",
+      total_reads="method_input/AML-99_total_readcounts.csv",
+      variant_reads="method_input/AML-99_variant_readcounts.csv",
+      timepoints="method_input/AML-99_timepoints.csv",
+    shell:
+        "python ../../src/generate_method_input.py -t {params.t} --name {params.name}"
+        " 1> {log.std} 2> {log.err}"
+
+rule generate_method_input_AML_88:
+    input:
+      mutations_of_interest="mutation_selection/AML-88_mutations.pkl",
+      output_genotype_file="processed_loom_files/AML-88-003.allvariants.genotype_modified.txt",
+    params:
+        t=3,
+        name="AML-88",
+    log:
+        std="method_input/AML-88.log", 
+        err="method_input/AML-88.err.log",
+    output:
+      SPhyR_file="method_input/AML-88_sphyr.csv",
+      COMPASS_file="method_input/AML-88_COMPASS_variants.csv",
+      total_reads="method_input/AML-88_total_readcounts.csv",
+      variant_reads="method_input/AML-88_variant_readcounts.csv",
+      timepoints="method_input/AML-88_timepoints.csv",
+    shell:
+        "python ../../src/generate_method_input.py -t {params.t} --name {params.name}"
+        " 1> {log.std} 2> {log.err}"
+
+
+
+
 rule phyllochron_AML_63:
     input:
       total_reads="method_input/AML-63_total_readcounts.csv",
       variant_reads="method_input/AML-63_variant_readcounts.csv",
       timepoints="method_input/AML-63_timepoints.csv",
-      mutation_tree="raw_data/AML-63_tree.csv"
+      mutation_tree="COMPASS/AML-63_nodes_genotypes.tsv"
     params:
         fp=0.01,
         fn=0.037,
@@ -171,7 +313,7 @@ rule phyllochron_AML_63:
     output:
       character_matrix="Phyllochron/AML-63_B.csv",
     shell:
-        "python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        "time python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
         " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn}"
         " 1> {log.std} 2> {log.err}"
 
@@ -180,7 +322,7 @@ rule phyllochron_AML_97:
       total_reads="method_input/AML-97_total_readcounts.csv",
       variant_reads="method_input/AML-97_variant_readcounts.csv",
       timepoints="method_input/AML-97_timepoints.csv",
-      mutation_tree="raw_data/AML-97_tree.csv"
+      mutation_tree="COMPASS/AML-97_nodes_genotypes.tsv",
     params:
         fp=0.01,
         fn=0.038,
@@ -192,16 +334,61 @@ rule phyllochron_AML_97:
     output:
       character_matrix="Phyllochron/AML-97_B.csv",
     shell:
-        "python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        "time python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
         " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn}"
         " 1> {log.std} 2> {log.err}"
+
+rule phyllochron_AML_99:
+    input:
+      total_reads="method_input/AML-99_total_readcounts.csv",
+      variant_reads="method_input/AML-99_variant_readcounts.csv",
+      timepoints="method_input/AML-99_timepoints.csv",
+      mutation_tree="COMPASS/AML-99_nodes_genotypes.tsv",
+    params:
+        fp=0.01,
+        fn=0.077,
+        z=config['threshold_parameter'],
+        output_prefix="Phyllochron/AML-99",
+    log:
+        std="Phyllochron/AML-99.log", 
+        err="Phyllochron/AML-99.err.log",
+    output:
+      character_matrix="Phyllochron/AML-99_B.csv",
+    shell:
+        "time python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn}"
+        " 1> {log.std} 2> {log.err}"
+
+rule phyllochron_AML_88:
+    input:
+      total_reads="method_input/AML-88_total_readcounts.csv",
+      variant_reads="method_input/AML-88_variant_readcounts.csv",
+      timepoints="method_input/AML-88_timepoints.csv",
+      mutation_tree="COMPASS/AML-88_nodes_genotypes.tsv",
+    params:
+        fp=0.01,
+        fn=0.077,
+        z=config['threshold_parameter'],
+        output_prefix="Phyllochron/AML-88",
+    log:
+        std="Phyllochron/AML-88.log", 
+        err="Phyllochron/AML-88.err.log",
+    output:
+      character_matrix="Phyllochron/AML-88_B.csv",
+    shell:
+        "time python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn}"
+        " 1> {log.std} 2> {log.err}"
+
+
 
 rule phyllochron_compass_AML_63:
     input:
       total_reads="method_input/AML-63_total_readcounts.csv",
       variant_reads="method_input/AML-63_variant_readcounts.csv",
       timepoints="method_input/AML-63_timepoints.csv",
-      mutation_tree="raw_data/AML-63_tree.csv"
+      mutation_tree="COMPASS/AML-63_nodes_genotypes.tsv",
+      cell_assignment_probs="COMPASS/AML-63_cellAssignmentProbs.tsv",
     params:
         fp=0.01,
         fn=0.037,
@@ -213,8 +400,8 @@ rule phyllochron_compass_AML_63:
     output:
       character_matrix="Phyllochron_COMPASS/AML-63_B.csv",
     shell:
-        "python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
-        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn} --run-compass-likelihood True"
+        "time python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn} --run-pp True --compass-assignment {input.cell_assignment_probs}"
         " 1> {log.std} 2> {log.err}"
 
 rule phyllochron_compass_AML_97:
@@ -222,7 +409,8 @@ rule phyllochron_compass_AML_97:
       total_reads="method_input/AML-97_total_readcounts.csv",
       variant_reads="method_input/AML-97_variant_readcounts.csv",
       timepoints="method_input/AML-97_timepoints.csv",
-      mutation_tree="raw_data/AML-97_tree.csv"
+      mutation_tree="COMPASS/AML-97_nodes_genotypes.tsv",
+      cell_assignment_probs="COMPASS/AML-97_cellAssignmentProbs.tsv",
     params:
         fp=0.01,
         fn=0.038,
@@ -234,9 +422,145 @@ rule phyllochron_compass_AML_97:
     output:
       character_matrix="Phyllochron_COMPASS/AML-97_B.csv",
     shell:
-        "python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
-        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn} --run-compass-likelihood True"
+        "time python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn} --run-pp True --compass-assignment {input.cell_assignment_probs}"
         " 1> {log.std} 2> {log.err}"
+
+rule phyllochron_compass_AML_99:
+    input:
+      total_reads="method_input/AML-99_total_readcounts.csv",
+      variant_reads="method_input/AML-99_variant_readcounts.csv",
+      timepoints="method_input/AML-99_timepoints.csv",
+      mutation_tree="COMPASS/AML-99_nodes_genotypes.tsv",
+      cell_assignment_probs="COMPASS/AML-99_cellAssignmentProbs.tsv",
+    params:
+        fp=0.01,
+        fn=0.077,
+        z=config['threshold_parameter'],
+        output_prefix="Phyllochron_COMPASS/AML-99",
+    log:
+        std="Phyllochron_COMPASS/AML-99.log", 
+        err="Phyllochron_COMPASS/AML-99.err.log",
+    output:
+      character_matrix="Phyllochron_COMPASS/AML-99_B.csv",
+    shell:
+        "time python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn} --run-pp True --compass-assignment {input.cell_assignment_probs}"
+        " 1> {log.std} 2> {log.err}"
+
+rule phyllochron_compass_AML_88:
+    input:
+      total_reads="method_input/AML-88_total_readcounts.csv",
+      variant_reads="method_input/AML-88_variant_readcounts.csv",
+      timepoints="method_input/AML-88_timepoints.csv",
+      mutation_tree="COMPASS/AML-88_nodes_genotypes.tsv",
+      cell_assignment_probs="COMPASS/AML-88_cellAssignmentProbs.tsv",
+    params:
+        fp=0.01,
+        fn=0.077,
+        z=config['threshold_parameter'],
+        output_prefix="Phyllochron_COMPASS/AML-88",
+    log:
+        std="Phyllochron_COMPASS/AML-88.log", 
+        err="Phyllochron_COMPASS/AML-88.err.log",
+    output:
+      character_matrix="Phyllochron_COMPASS/AML-88_B.csv",
+    shell:
+        "time python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn} --run-pp True --compass-assignment {input.cell_assignment_probs}"
+        " 1> {log.std} 2> {log.err}"
+
+
+
+
+rule phyllochron_probs_AML_63:
+    input:
+      total_reads="method_input/AML-63_total_readcounts.csv",
+      variant_reads="method_input/AML-63_variant_readcounts.csv",
+      timepoints="method_input/AML-63_timepoints.csv",
+      mutation_tree="COMPASS/AML-63_nodes_genotypes.tsv",
+      cell_assignment_probs="COMPASS/AML-63_cellAssignmentProbs.tsv",
+    params:
+        fp=0.01,
+        fn=0.037,
+        z=config['threshold_parameter'],
+        output_prefix="Phyllochron_Probs/AML-63",
+    log:
+        std="Phyllochron_Probs/AML-63.log", 
+        err="Phyllochron_Probs/AML-63.err.log",
+    output:
+      character_matrix="Phyllochron_Probs/AML-63_B.csv",
+    shell:
+        "time python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn} --compass-assignment {input.cell_assignment_probs}"
+        " 1> {log.std} 2> {log.err}"
+
+rule phyllochron_probs_AML_97:
+    input:
+      total_reads="method_input/AML-97_total_readcounts.csv",
+      variant_reads="method_input/AML-97_variant_readcounts.csv",
+      timepoints="method_input/AML-97_timepoints.csv",
+      mutation_tree="COMPASS/AML-97_nodes_genotypes.tsv",
+      cell_assignment_probs="COMPASS/AML-97_cellAssignmentProbs.tsv",
+    params:
+        fp=0.01,
+        fn=0.038,
+        z=config['threshold_parameter'],
+        output_prefix="Phyllochron_Probs/AML-97",
+    log:
+        std="Phyllochron_Probs/AML-97.log", 
+        err="Phyllochron_Probs/AML-97.err.log",
+    output:
+      character_matrix="Phyllochron_Probs/AML-97_B.csv",
+    shell:
+        "time python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn} --compass-assignment {input.cell_assignment_probs}"
+        " 1> {log.std} 2> {log.err}"
+
+rule phyllochron_probs_AML_99:
+    input:
+      total_reads="method_input/AML-99_total_readcounts.csv",
+      variant_reads="method_input/AML-99_variant_readcounts.csv",
+      timepoints="method_input/AML-99_timepoints.csv",
+      mutation_tree="COMPASS/AML-99_nodes_genotypes.tsv",
+      cell_assignment_probs="COMPASS/AML-99_cellAssignmentProbs.tsv",
+    params:
+        fp=0.01,
+        fn=0.077,
+        z=config['threshold_parameter'],
+        output_prefix="Phyllochron_Probs/AML-99",
+    log:
+        std="Phyllochron_Probs/AML-99.log", 
+        err="Phyllochron_Probs/AML-99.err.log",
+    output:
+      character_matrix="Phyllochron_Probs/AML-99_B.csv",
+    shell:
+        "time python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn} --compass-assignment {input.cell_assignment_probs}"
+        " 1> {log.std} 2> {log.err}"
+
+rule phyllochron_probs_AML_88:
+    input:
+      total_reads="method_input/AML-88_total_readcounts.csv",
+      variant_reads="method_input/AML-88_variant_readcounts.csv",
+      timepoints="method_input/AML-88_timepoints.csv",
+      mutation_tree="COMPASS/AML-88_nodes_genotypes.tsv",
+      cell_assignment_probs="COMPASS/AML-88_cellAssignmentProbs.tsv",
+    params:
+        fp=0.01,
+        fn=0.077,
+        z=config['threshold_parameter'],
+        output_prefix="Phyllochron_Probs/AML-88",
+    log:
+        std="Phyllochron_Probs/AML-88.log", 
+        err="Phyllochron_Probs/AML-88.err.log",
+    output:
+      character_matrix="Phyllochron_Probs/AML-88_B.csv",
+    shell:
+        "time python ../../src/phyllochron.py -r {input.total_reads} -v {input.variant_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
+        " -o {params.output_prefix} -z {params.z} -a {params.fp} -b {params.fn} --compass-assignment {input.cell_assignment_probs}"
+        " 1> {log.std} 2> {log.err}"
+
 
 
 rule sphyr_AML_63:
@@ -254,7 +578,7 @@ rule sphyr_AML_63:
     output:
       output_matrix="SPhyR/AML-63_sphyr.csv"
     shell:
-      "{params.sphyr_installation} {input.SPhyR_file} {output.output_matrix} -a {params.fp} -b {params.fn} -lT {params.ncells} -lC {params.nclusters} -k 0"
+      "time {params.sphyr_installation} {input.SPhyR_file} {output.output_matrix} -a {params.fp} -b {params.fn} -lT {params.ncells} -lC {params.nclusters} -k 0"
       " 1> {log.std} 2> {log.err}"
 
 rule sphyr_AML_97:
@@ -272,7 +596,7 @@ rule sphyr_AML_97:
     output:
       output_matrix="SPhyR/AML-97_sphyr.csv"
     shell:
-      "{params.sphyr_installation} {input.SPhyR_file} {output.output_matrix} -a {params.fp} -b {params.fn} -lT {params.ncells} -lC {params.nclusters} -k 0"
+      "time {params.sphyr_installation} {input.SPhyR_file} {output.output_matrix} -a {params.fp} -b {params.fn} -lT {params.ncells} -lC {params.nclusters} -k 0"
       " 1> {log.std} 2> {log.err}"
 
 
@@ -292,7 +616,7 @@ rule compass_AML_63:
     output:
       output_matrix="COMPASS/AML-63_nodes_genotypes.tsv"
     shell:
-      "{params.compass_installation} -i {params.input_prefix} -o {params.output_prefix} --nchains {params.nchains} --chainlength {params.chainlength} --seqerror {params.seqerror} --CNA 0 -d 0"
+      "time {params.compass_installation} -i {params.input_prefix} -o {params.output_prefix} --nchains {params.nchains} --chainlength {params.chainlength} --seqerror {params.seqerror} --CNA 0 -d 0"
       " 1> {log.std} 2> {log.err}"
 
 
@@ -312,9 +636,47 @@ rule compass_AML_97:
     output:
       output_matrix="COMPASS/AML-97_nodes_genotypes.tsv"
     shell:
-      "{params.compass_installation} -i {params.input_prefix} -o {params.output_prefix} --nchains {params.nchains} --chainlength {params.chainlength} --seqerror {params.seqerror} --CNA 0 -d 0"
+      "time {params.compass_installation} -i {params.input_prefix} -o {params.output_prefix} --nchains {params.nchains} --chainlength {params.chainlength} --seqerror {params.seqerror} --CNA 0 -d 0"
       " 1> {log.std} 2> {log.err}"
 
 
+
+rule compass_AML_99:
+    input:
+      COMPASS_file="method_input/AML-99_COMPASS_variants.csv",
+    params:
+      compass_installation=config["COMPASS_installation"],
+      nchains=100,
+      chainlength=2000,
+      seqerror=0.087,
+      input_prefix='method_input/AML-99_COMPASS',
+      output_prefix='COMPASS/AML-99',
+    log:
+      std="COMPASS/AML-99.log", 
+      err="COMPASS/AML-99.err.log",
+    output:
+      output_matrix="COMPASS/AML-99_nodes_genotypes.tsv"
+    shell:
+      "time {params.compass_installation} -i {params.input_prefix} -o {params.output_prefix} --nchains {params.nchains} --chainlength {params.chainlength} --seqerror {params.seqerror} --CNA 0 -d 0"
+      " 1> {log.std} 2> {log.err}"
+
+rule compass_AML_88:
+    input:
+      COMPASS_file="method_input/AML-88_COMPASS_variants.csv",
+    params:
+      compass_installation=config["COMPASS_installation"],
+      nchains=100,
+      chainlength=2000,
+      seqerror=0.087,
+      input_prefix='method_input/AML-88_COMPASS',
+      output_prefix='COMPASS/AML-88',
+    log:
+      std="COMPASS/AML-88.log", 
+      err="COMPASS/AML-88.err.log",
+    output:
+      output_matrix="COMPASS/AML-88_nodes_genotypes.tsv"
+    shell:
+      "time {params.compass_installation} -i {params.input_prefix} -o {params.output_prefix} --nchains {params.nchains} --chainlength {params.chainlength} --seqerror {params.seqerror} --CNA 0 -d 0"
+      " 1> {log.std} 2> {log.err}"
 
 

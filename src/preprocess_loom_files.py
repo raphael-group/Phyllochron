@@ -7,6 +7,8 @@ def preprocess_loom_files(args):
     patient_name = args.name
     timepoints = args.t
     for timepoint in list(range(1,timepoints + 1)):
+        
+        print(f'raw_data/{patient_name}-00{timepoint}.loom')
         ds = loompy.connect(f'raw_data/{patient_name}-00{timepoint}.loom')
         allid=ds.ra.id
         df_merged = pd.DataFrame()

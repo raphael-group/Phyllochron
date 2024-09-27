@@ -48,21 +48,27 @@ def main(args):
     if args.v is not None:
         df_variant_readcounts = pd.read_csv(f'{args.v}', index_col = 0)
     if args.mutation_tree is not None:
-        mutation_tree = pd.read_csv(f'{args.mutation_tree}').values
+        mutation_tree = pd.read_csv(f'{args.mutation_tree}', sep='\t', index_col = 0).values
     if args.t is not None:
         timepoints = pd.read_csv(f'{args.t}', index_col = 0)['timepoints'].values
+    compass_assignment = None
+    if args.compass_assignment is not None:
+        compass_assignment = pd.read_csv(f'{args.compass_assignment}', sep='\t', index_col = 0).values
 
 
-
+    print(mutation_tree)
     fp = args.a
     fn = args.b
     ado = args.ado
     run_pp = args.run_pp
 
+
+
     if args.r is not None:
         solver = solveLongitudinallyObservedPerfectPhylogeny(mutation_tree, timepoints=timepoints, df_total_readcounts=df_total_readcounts,
                                        df_variant_readcounts=df_variant_readcounts, fp=fp, fn=fn,
-                                       ado_precision = ado, z=args.z, prefix=args.o, run_pp = run_pp, use_COMPASS_likelihood = args.run_compass_likelihood)
+                                       ado_precision = ado, z=args.z, prefix=args.o, run_pp = run_pp, use_COMPASS_likelihood = args.run_compass_likelihood,
+                                       compass_assignment=compass_assignment)
     else:
         solver = solveLongitudinallyObservedPerfectPhylogeny(mutation_tree, timepoints=timepoints, df_character_matrix=df_character_matrix,
                                         fp=fp, fn=fn, ado_precision = ado, z=args.z, prefix=args.o, run_pp = run_pp)
@@ -93,6 +99,7 @@ if __name__ == "__main__":
     parser.add_argument('--time-limit', type=int, help='time limit in seconds [1800]', default = 1800)
     parser.add_argument('--run-pp', type=bool, help='run Phyllochron without longitudinal constraints?', default = False)
     parser.add_argument('--run-compass-likelihood', type=bool, help='run Phyllochron with COMPASS likelihood', default = False)
+    parser.add_argument('--compass-assignment', type=str, help='file with COMPASS assignment likelihoods to optimize for')
 
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
     if args.mutation_tree is None:
