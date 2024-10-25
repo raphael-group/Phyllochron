@@ -4,6 +4,14 @@ import pickle
 import pandas as pd
 import argparse 
 import sys
+from numba import njit, prange
+
+@njit
+def fast_indexing(array, indices):
+    result = np.empty((len(indices), array.shape[1]))
+    for i in range(len(indices)):
+        result[i] = array[indices[i], :]
+    return result
 
 
 
@@ -15,11 +23,12 @@ def produce_SPhyR_input(args):
         patient_mutations = pickle.load(f)
 
 
-
+    print(len(patient_mutations))
     dfs_to_merge = []
     size = []
     for sample in list(range(1,ntimepoints+1)):
-        outname = f"/n/fs/ragr-data/users/aj7381/{patient_name}-00{sample}.allvariants.genotype_modified.txt"
+        outname = f"processed_loom_files/{patient_name}-00{sample}.allvariants.genotype_modified.txt"
+        print(outname)
         df = pd.read_csv(outname, sep='\t',header=None, index_col=0)
         if sample == 1 and patient_name == 'AML-63':
             df.index = ['chr' + ':'.join(f.split(':')[1:]) for f in df.index]
@@ -65,6 +74,59 @@ def produce_readcount_input(args):
         patient_mutations = pickle.load(f)
 
 
+    
+    dfs_to_merge = []
+    size = []
+    for sample in list(range(1,ntimepoints+1)):
+        outname = f"processed_loom_files/{patient_name}-00{sample}.total_readcounts.csv"
+        df = pd.read_csv(outname, sep='\t',header=None, index_col=0)
+        if sample == 1 and patient_name == 'AML-63':
+            df.index = ['chr' + ':'.join(f.split(':')[1:]) for f in df.index]
+
+        filtered_df = df[df.index.str.contains('|'.join(patient_mutations))]
+        filtered_index = filtered_df.index
+        filtered_values = filtered_df.values
+        zygozity_aware_matrix = np.zeros((filtered_values.shape[0], filtered_values.shape[1]))
+    
+        nfiltered_index = []
+        
+        for r in range(filtered_values.shape[0]):
+            zygozity_aware_matrix[r, :] = filtered_values[r,:]
+            nfiltered_index.append(filtered_index[r] + '_1')
+        
+        df_merged = pd.DataFrame(zygozity_aware_matrix)
+        df_merged.index = nfiltered_index
+        dfs_to_merge.append(df_merged)
+        size.append(df_merged.shape[1])
+    merged_df = pd.concat(dfs_to_merge, axis=1).transpose()   # Initialize with the first DataFrame
+    merged_df.fillna(-1, inplace=True)
+    merged_df.index = range(len(merged_df))
+    
+    timepoints = []
+
+    data = np.zeros((ntimepoints, len(merged_df.columns)))
+    data_total = np.zeros((ntimepoints, len(merged_df.columns)))
+
+    for tp in range(ntimepoints):
+        for i in range(size[tp]):
+            timepoints.append(tp)
+    df = pd.DataFrame(data=timepoints, index=list(range(len(merged_df))), columns=['timepoints'])
+    df.to_csv(f'method_input/{patient_name}_timepoints.csv')
+
+
+    for i, c in enumerate(merged_df.columns):
+        for r in merged_df.index:
+            if merged_df.loc[r,c] < 5:
+                data[timepoints[r], i] += 1
+            data_total[timepoints[r], i] += 1
+
+
+    df_missing = pd.DataFrame(data/data_total, columns=merged_df.columns)
+
+    selected_mutations = df_missing.loc[:, (df_missing >= 0.05).any()].columns
+    merged_df[selected_mutations].to_csv(f'method_input/{patient_name}_total_readcounts.csv')    
+
+
     dfs_to_merge = []
     size = []
     for sample in list(range(1,ntimepoints+1)):
@@ -72,6 +134,7 @@ def produce_readcount_input(args):
         df = pd.read_csv(outname, sep='\t',header=None, index_col=0)
         if sample == 1 and patient_name == 'AML-63':
             df.index = ['chr' + ':'.join(f.split(':')[1:]) for f in df.index]
+        
 
         filtered_df = df[df.index.str.contains('|'.join(patient_mutations))]
         filtered_index = filtered_df.index
@@ -101,47 +164,14 @@ def produce_readcount_input(args):
     merged_df_var = pd.concat(dfs_to_merge, axis=1).transpose()   # Initialize with the first DataFrame
     merged_df_var.fillna(-1, inplace=True)
     merged_df_var.index = range(len(merged_df_var))
-    merged_df_var.to_csv(f'method_input/{patient_name}_variant_readcounts.csv')    
+    merged_df_var[selected_mutations].to_csv(f'method_input/{patient_name}_variant_readcounts.csv')    
 
 
-    dfs_to_merge = []
-    size = []
-    for sample in list(range(1,ntimepoints+1)):
-        outname = f"processed_loom_files/{patient_name}-00{sample}.total_readcounts.csv"
-        df = pd.read_csv(outname, sep='\t',header=None, index_col=0)
-        if sample == 1 and patient_name == 'AML-63':
-            df.index = ['chr' + ':'.join(f.split(':')[1:]) for f in df.index]
 
-        filtered_df = df[df.index.str.contains('|'.join(patient_mutations))]
-        filtered_index = filtered_df.index
-        filtered_values = filtered_df.values
-        zygozity_aware_matrix = np.zeros((filtered_values.shape[0], filtered_values.shape[1]))
     
-        nfiltered_index = []
-        
-        for r in range(filtered_values.shape[0]):
-            zygozity_aware_matrix[r, :] = filtered_values[r,:]
-            nfiltered_index.append(filtered_index[r] + '_1')
-        
-        df_merged = pd.DataFrame(zygozity_aware_matrix)
-        df_merged.index = nfiltered_index
-        dfs_to_merge.append(df_merged)
-        size.append(df_merged.shape[1])
-    merged_df = pd.concat(dfs_to_merge, axis=1).transpose()   # Initialize with the first DataFrame
-    merged_df.fillna(-1, inplace=True)
-    merged_df.index = range(len(merged_df))
-    merged_df.to_csv(f'method_input/{patient_name}_total_readcounts.csv')    
-
-    timepoints = []
-    for tp in range(ntimepoints):
-        for i in range(size[tp]):
-            timepoints.append(tp)
-    df = pd.DataFrame(data=timepoints, index=list(range(len(merged_df))), columns=['timepoints'])
-    df.to_csv(f'method_input/{patient_name}_timepoints.csv')
-
     with open(f'method_input/{patient_name}_COMPASS_variants.csv', "w") as vcf:
         vcf.write("CHR,REF,ALT,REGION,NAME,FREQ," + ",".join([str(i) for i in range(merged_df.shape[0])]) + "\n")            
-        for i, mutation in enumerate(merged_df.columns):
+        for i, mutation in enumerate(selected_mutations):
             print(mutation)
             chrom = mutation.split(':')[0]
             pos = mutation

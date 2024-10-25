@@ -48,7 +48,12 @@ def main(args):
     if args.v is not None:
         df_variant_readcounts = pd.read_csv(f'{args.v}', index_col = 0)
     if args.mutation_tree is not None:
-        mutation_tree = pd.read_csv(f'{args.mutation_tree}', sep='\t', index_col = 0).values
+        # set index_col = False for simulations
+        mutation_tree = pd.read_csv(f'{args.mutation_tree}', sep='\t', index_col = False).values
+        print(mutation_tree)
+        if all(not isinstance(x, str) for x in mutation_tree.flatten()) == False:
+            mutation_tree = pd.read_csv(f'{args.mutation_tree}', sep='\t', index_col = 0).values
+        print(mutation_tree)
     if args.t is not None:
         timepoints = pd.read_csv(f'{args.t}', index_col = 0)['timepoints'].values
     compass_assignment = None
@@ -56,22 +61,21 @@ def main(args):
         compass_assignment = pd.read_csv(f'{args.compass_assignment}', sep='\t', index_col = 0).values
 
 
-    print(mutation_tree)
     fp = args.a
     fn = args.b
     ado = args.ado
     run_pp = args.run_pp
 
-
+    print(args.brute_force_search)
 
     if args.r is not None:
         solver = solveLongitudinallyObservedPerfectPhylogeny(mutation_tree, timepoints=timepoints, df_total_readcounts=df_total_readcounts,
                                        df_variant_readcounts=df_variant_readcounts, fp=fp, fn=fn,
-                                       ado_precision = ado, z=args.z, prefix=args.o, run_pp = run_pp, use_COMPASS_likelihood = args.run_compass_likelihood,
+                                       ado_precision = ado, z=args.z, threshold=args.threshold, prefix=args.o, run_pp = run_pp, brute_force = args.brute_force_search, use_COMPASS_likelihood = args.run_compass_likelihood,
                                        compass_assignment=compass_assignment)
     else:
         solver = solveLongitudinallyObservedPerfectPhylogeny(mutation_tree, timepoints=timepoints, df_character_matrix=df_character_matrix,
-                                        fp=fp, fn=fn, ado_precision = ado, z=args.z, prefix=args.o, run_pp = run_pp)
+                                        fp=fp, fn=fn, ado_precision = ado, z=args.z, threshold=args.threshold, prefix=args.o, run_pp = run_pp, brute_force = args.brute_force_search)
         
     solver.solveML_LA()
     prefix = args.o
@@ -91,7 +95,9 @@ if __name__ == "__main__":
     parser.add_argument('-v', type=str, help='csv file with variant read count matrix')
     parser.add_argument('-t', type=str, help='csv file with timepoints associated with cells (in the same order that the cells appear in other input files)')
     parser.add_argument('--mutation-tree', type=str, help='csv file with mutation tree encoded by clone profile matrix')
-    parser.add_argument('-z', type=float, help='fractional threshold representing the minimum proportion of cells at a sample assigned to a clone for that clone to be present in that sample')
+    parser.add_argument('--brute-force-search', type=bool, help='brute force search through tree space?')
+    parser.add_argument('-z', type=int, help='threshold representing the number of clones present in the data')
+    parser.add_argument('--threshold', type=float, help='fractional threshold representing the minimum number of cells at a sample assigned to a clone for that clone to be present in that sample')
     parser.add_argument('-a', type=float, help='false positive error rate [0.001]', default = 0.001)
     parser.add_argument('-b', type=float, help='false negative error rate [0.001]', default = 0.001)
     parser.add_argument('--ado', type=float, help='precision parameter for ADO', default=15)

@@ -3,10 +3,19 @@ patient_names:
   - 'AML-97'
   - 'AML-99'
   - 'AML-88'
+  - 'AML-38'
 
 
 COMPASS_installation: '/n/fs/ragr-data/users/aj7381/COMPASS/COMPASS'
 SPhyR_installation: '/n/fs/ragr-data/users/palash/SPhyR/build/kDPFC'
 
+threshold_parameter_AML63: 3
 
-threshold_parameter: 75
+threshold_parameter_AML97: 5 # 34
+
+threshold_parameter_AML88: 6 #32
+threshold_parameter_AML99: 10 # 29
+threshold_parameter_AML38: 9
+
+cell_parameter:  0.002
+

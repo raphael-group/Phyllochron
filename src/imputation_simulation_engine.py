@@ -12,8 +12,9 @@ def main(args):
     t = args.t
     error_rate = args.error_rate
     ncells = args.ncells
-    profiles = pd.read_csv(f'{args.profiles}').values
-    mutation_names = pd.read_csv(f'{args.profiles}').columns
+    profiles = pd.read_csv(f'{args.profiles}', sep='\t', index_col=False).values
+    print(profiles)
+    mutation_names = pd.read_csv(f'{args.profiles}', sep='\t', index_col=False).columns
     nmutations = profiles.shape[1]
     prefix = args.o
     sd = args.sd

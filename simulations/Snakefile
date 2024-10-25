@@ -9,12 +9,6 @@ seeds = [ i for i in range(config["nseeds"])]
 rule all:
     input:
       # simulation
-      expand('ground_truth/phyllochron_{t}_{prop}_{sd}_character_matrix.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
-      expand('ground_truth/phyllochron_{t}_{prop}_{sd}_timepoints.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
-      expand('ground_truth/sphyr_{t}_{prop}_{sd}.txt', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
-      expand('ground_truth/scite_{t}_{prop}_{sd}.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
-      expand('ground_truth/gt_imputation_{t}_{prop}_{sd}.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
-
       expand('ground_truth_rc/phyllochron_{t}_{prop}_{sd}_variant_readcounts.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
       expand('ground_truth_rc/phyllochron_{t}_{prop}_{sd}_total_readcounts.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
       expand('ground_truth_rc/phyllochron_{t}_{prop}_{sd}_timepoints.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
@@ -22,18 +16,18 @@ rule all:
       expand('ground_truth_rc/phylovar_{t}_{prop}_{sd}.mpileup', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
       expand('ground_truth_rc/phylovar_{t}_{prop}_{sd}.names', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
       expand('ground_truth_rc/gt_readcount_{t}_{prop}_{sd}.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
+      expand('ground_truth_rc/sphyr_{t}_{prop}_{sd}.txt', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
+      expand('ground_truth_rc/scite_{t}_{prop}_{sd}.csv',sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
 
 
       # SPhyR
-      expand('SPhyR/sphyr_{t}_{prop}_{sd}.txt', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
+      expand('SPhyR/sphyr_{t}_{prop}_{sd}.txt', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
       # SCITE
-      expand('SCITE/scite_{t}_{prop}_{sd}_ml0.gv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
+      expand('SCITE/scite_{t}_{prop}_{sd}_ml0.gv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
       # Phyllochron
-      expand('Phyllochron/phyllochron_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
       expand('Phyllochron_RC/phyllochron_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
 
       # Phyllochron-PP
-      expand('Phyllochron_PP/phyllochron_pp_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_imputation']),
       expand('Phyllochron_PP_RC/phyllochron_pp_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
 
       # PhyloVar
@@ -45,25 +39,6 @@ rule all:
 
 
 
-rule simulation_imputation:
-  input:
-        mutation_tree=config['mutation_tree'],
-  output:
-        character_matrix="ground_truth/phyllochron_{t}_{prop}_{sd}_character_matrix.csv",
-        timepoints="ground_truth/phyllochron_{t}_{prop}_{sd}_timepoints.csv",
-        sphyr_file='ground_truth/sphyr_{t}_{prop}_{sd}.txt',
-        scite_file='ground_truth/scite_{t}_{prop}_{sd}.csv',
-        ground_truth='ground_truth/gt_imputation_{t}_{prop}_{sd}.csv',
-  params:
-        prefix="ground_truth/",
-        ncells=config['ncells_imputation'],
-  log:
-        std="ground_truth/{t}_{prop}_{sd}.log", 
-        err="ground_truth/{t}_{prop}_{sd}.err.log",
-  shell:
-        "python ../src/imputation_simulation_engine.py -t {wildcards.t} --sd {wildcards.sd} --ncells {params.ncells} -o {params.prefix}"
-        " --error-rate {wildcards.prop} --profiles {input.mutation_tree}"
-        " 1> {log.std} 2> {log.err}"
 
 rule simulation_readcount:
   input:
@@ -76,6 +51,8 @@ rule simulation_readcount:
         phylovar_names='ground_truth_rc/phylovar_{t}_{prop}_{sd}.names',
         compass_file='ground_truth_rc/compass_{t}_{prop}_{sd}_variants.csv',
         ground_truth='ground_truth_rc/gt_readcount_{t}_{prop}_{sd}.csv',
+        sphyr_file='ground_truth_rc/sphyr_{t}_{prop}_{sd}.txt',
+        scite_file='ground_truth_rc/scite_{t}_{prop}_{sd}.csv',
   params:
         prefix="ground_truth_rc/",
         ncells=config['ncells_readcount'],
@@ -92,13 +69,13 @@ rule simulation_readcount:
 
 rule sphyr:
   input:
-        input_file='ground_truth/sphyr_{t}_{prop}_{sd}.txt',
+        input_file='ground_truth_rc/sphyr_{t}_{prop}_{sd}.txt',
   params:
-        ncells=lambda wildcards: int(config['ncells_imputation']) * int(wildcards.t),
+        ncells=lambda wildcards: int(config['ncells_readcount']) * int(wildcards.t),
         sphyr_install=config['SPhyR_installation'],
         nmutations=config['nmutations'] + 1,
-        fp=lambda wildcards: float(wildcards.prop) / 2,
-        fn=lambda wildcards: float(wildcards.prop) / 2,
+        fp=config['estimated_fp'],
+        fn=lambda wildcards: wildcards.prop,
   log:
         std="SPhyR/{t}_{prop}_{sd}.log", 
         err="SPhyR/{t}_{prop}_{sd}.err.log",
@@ -111,14 +88,14 @@ rule sphyr:
 
 rule scite:
   input:
-        input_file='ground_truth/scite_{t}_{prop}_{sd}.csv',
+        input_file='ground_truth_rc/scite_{t}_{prop}_{sd}.csv',
   params:
-        ncells=lambda wildcards: int(config['ncells_imputation']) * int(wildcards.t),
+        ncells=lambda wildcards: int(config['ncells_readcount']) * int(wildcards.t),
         scite_install=config['SCITE_installation'],
         nmutations=config['nmutations'],
-        fp=lambda wildcards: float(wildcards.prop) / 2,
-        fn=lambda wildcards: float(wildcards.prop) / 2,
-        output_prefix='SCITE/scite_{t}_{prop}_{sd}'
+        fp=config['estimated_fp'],
+        fn=lambda wildcards: wildcards.prop,
+        output_prefix='SCITE/scite_{t}_{prop}_{sd}',
   log:
         std="SCITE/{t}_{prop}_{sd}.log", 
         err="SCITE/{t}_{prop}_{sd}.err.log",
@@ -161,50 +138,10 @@ rule compass:
         output_assignment='COMPASS/compass_{t}_{prop}_{sd}_cellAssignments.tsv',
         output_genotype='COMPASS/compass_{t}_{prop}_{sd}_nodes_genotypes.tsv',
   shell:
-        "{params.compass_install} -i {params.input_prefix} -o {params.output_prefix} --nchains 40 --chainlength 500 --CNA 0 --seqerror {params.error_rate} --dropoutrate_concentration 15"
+        "{params.compass_install} -i {params.input_prefix} -o {params.output_prefix} --nchains 1 --chainlength 100 --CNA 0 --seqerror {params.error_rate} "
         " 1> {log.std} 2> {log.err}"
 
 
-rule phyllochron_imputation:
-  input:
-        character_matrix='ground_truth/phyllochron_{t}_{prop}_{sd}_character_matrix.csv',
-        timepoints='ground_truth/phyllochron_{t}_{prop}_{sd}_timepoints.csv',
-        mutation_tree=config['mutation_tree'],
-  params:
-        fp=lambda wildcards: float(wildcards.prop) / 2,
-        fn=lambda wildcards: float(wildcards.prop) / 2,
-        z=config['threshold_imputation'],
-        output_prefix='Phyllochron/phyllochron_{t}_{prop}_{sd}',
-  log:
-        std="Phyllochron/{t}_{prop}_{sd}.log", 
-        err="Phyllochron/{t}_{prop}_{sd}.err.log",
-  output:
-        output_matrix='Phyllochron/phyllochron_{t}_{prop}_{sd}_B.csv',
-  shell:
-        "python ../src/phyllochron.py -i {input.character_matrix} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
-        " -z {params.z} -a {params.fp} -b {params.fn} -o {params.output_prefix}"
-        " 1> {log.std} 2> {log.err}"
-
-
-rule phyllochron_pp_imputation:
-  input:
-        character_matrix='ground_truth/phyllochron_{t}_{prop}_{sd}_character_matrix.csv',
-        timepoints='ground_truth/phyllochron_{t}_{prop}_{sd}_timepoints.csv',
-        mutation_tree=config['mutation_tree'],
-  params:
-        fp=lambda wildcards: float(wildcards.prop) / 2,
-        fn=lambda wildcards: float(wildcards.prop) / 2,
-        z=config['threshold_imputation'],
-        output_prefix='Phyllochron_PP/phyllochron_pp_{t}_{prop}_{sd}',
-  log:
-        std="Phyllochron_PP/{t}_{prop}_{sd}.log", 
-        err="Phyllochron_PP/{t}_{prop}_{sd}.err.log",
-  output:
-        output_matrix='Phyllochron_PP/phyllochron_pp_{t}_{prop}_{sd}_B.csv',
-  shell:
-        "python ../src/phyllochron.py -i {input.character_matrix} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
-        " -z {params.z} -a {params.fp} -b {params.fn} -o {params.output_prefix} --run-pp True"
-        " 1> {log.std} 2> {log.err}"
 
 rule phyllochron_readcount:
   input:
@@ -213,8 +150,8 @@ rule phyllochron_readcount:
         timepoints='ground_truth_rc/phyllochron_{t}_{prop}_{sd}_timepoints.csv',
         mutation_tree=config['mutation_tree'],
   params:
-        fp=lambda wildcards: float(wildcards.prop) / 2,
-        fn=lambda wildcards: float(wildcards.prop) / 2,
+        fp=0.1,
+        fn=0.1,
         z=config['threshold_readcount'],
         output_prefix='Phyllochron_RC/phyllochron_{t}_{prop}_{sd}',
   log:
@@ -224,7 +161,7 @@ rule phyllochron_readcount:
         output_matrix='Phyllochron_RC/phyllochron_{t}_{prop}_{sd}_B.csv',
   shell:
         "python ../src/phyllochron.py -v {input.variant_reads} -r {input.total_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
-        " -z {params.z} -a {params.fp} -b {params.fn} -o {params.output_prefix}"
+        " --threshold {params.z} -a {params.fp} -b {params.fn} -o {params.output_prefix} "
         " 1> {log.std} 2> {log.err}"
 
 rule phyllochron_pp_readcount:
@@ -234,9 +171,9 @@ rule phyllochron_pp_readcount:
         timepoints='ground_truth_rc/phyllochron_{t}_{prop}_{sd}_timepoints.csv',
         mutation_tree=config['mutation_tree'],
   params:
-        fp=lambda wildcards: float(wildcards.prop) / 2,
-        fn=lambda wildcards: float(wildcards.prop) / 2,
-        z=config['threshold_readcount'],
+        fp=config['estimated_fp'],
+        fn=lambda wildcards: wildcards.prop,
+        z=0,
         output_prefix='Phyllochron_PP_RC/phyllochron_pp_{t}_{prop}_{sd}',
   log:
         std="Phyllochron_PP_RC/{t}_{prop}_{sd}.log", 
@@ -245,6 +182,6 @@ rule phyllochron_pp_readcount:
         output_matrix='Phyllochron_PP_RC/phyllochron_pp_{t}_{prop}_{sd}_B.csv',
   shell:
         "python ../src/phyllochron.py -v {input.variant_reads} -r {input.total_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
-        " -z {params.z} -a {params.fp} -b {params.fn} -o {params.output_prefix} --run-pp True"
+        " --threshold {params.z} -a {params.fp} -b {params.fn} -o {params.output_prefix} --run-pp True "
         " 1> {log.std} 2> {log.err}"
 

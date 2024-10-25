@@ -5,27 +5,19 @@ ntimepoints:
 
 nseeds: 20
 
-ncells_imputation: 2000
-threshold_imputation: 0.20
-
 ncells_readcount: 100
-threshold_readcount: 0.20
-
-error_rate_imputation:
-  - 0.01
-  - 0.05
-  - 0.075
-  - 0.10
-  - 0.125 
-  - 0.15
+threshold_readcount: 0.167
 
 error_rate_readcount:
   - 0.01
-  - 0.02
-  - 0.03
-  - 0.04
+  - 0.025
   - 0.05
-  - 0.06
+  - 0.075
+  - 0.10
+
+
+estimated_fp: 0.13
+estimated_fn: 0.16
 
 read_depth: 30
 ado: 15

@@ -7,6 +7,7 @@ import matplotlib as mpl
 import seaborn as sns
 import argparse
 import sys
+import math
 
 def main(args):
     t = args.t
@@ -14,8 +15,9 @@ def main(args):
     read_depth = args.rd
     ado = args.ado
     ncells = args.ncells
-    profiles = pd.read_csv(f'{args.profiles}').values
-    mutation_names = pd.read_csv(f'{args.profiles}').columns
+    profiles = pd.read_csv(f'{args.profiles}', sep='\t', index_col=False).values
+    print(profiles)
+    mutation_names = pd.read_csv(f'{args.profiles}', sep='\t', index_col=False).columns
     nmutations = profiles.shape[1]
     prefix = args.o
     sd = args.sd
@@ -57,6 +59,11 @@ def main(args):
             beta = (1-fp_error_rate) * ado
             variant_rc_matrix[r,c] = int(scipy.stats.betabinom.rvs(int(total_rc_matrix[r,c]), alpha, beta))
     
+    nmissing = math.floor(0.20 * og_character_matrix.shape[0] * og_character_matrix.shape[1])
+    selected_cell_indices = np.random.randint(og_character_matrix.shape[0], size=nmissing)
+    selected_character_indices = np.random.randint(og_character_matrix.shape[1], size=nmissing)
+    total_rc_matrix[selected_cell_indices, selected_character_indices] = 0
+    variant_rc_matrix[selected_cell_indices, selected_character_indices] = 0
     df_total = pd.DataFrame(data=total_rc_matrix, index=list(range(t * ncells)), columns=mutation_names)
     df_total.to_csv(f'{prefix}phyllochron_{t}_{error_rate}_{sd}_total_readcounts.csv')
 
@@ -77,6 +84,8 @@ def main(args):
             entries = [seq_name, pos, ref_allele]
             
             for var,tot in zip(vs, ts):
+                if tot == 0:
+                    tot = 1
                 readcov = int(tot)
                 readstring = '.'*int(tot-var) + 'T'*int(var)
                 qualstring = 'I'*int(tot)
@@ -109,6 +118,23 @@ def main(args):
             
             
             vcf.write(f"{chrom},{ref},{alt},{pos},{pos},0," + ",".join([f'{tot-var}:{var}' for var,tot in zip(vs, ts)])+"\n")
+    
+
+    VAF_mat = variant_rc_matrix/total_rc_matrix
+    mutation_mat = ((VAF_mat >= 0.1) & (variant_rc_matrix >= 3)).astype(int)
+    mutation_mat[selected_cell_indices, selected_character_indices] = -1
+    print(mutation_mat.shape)
+
+    f = open(f'{prefix}sphyr_{t}_{error_rate}_{sd}.txt', "w")
+    f.write(f'{int(t * ncells)}\n')
+    f.write(f'{nmutations}\n')
+    for r in range(mutation_mat.shape[0]):
+        f.write("\t".join(map(str,mutation_mat[r].flatten())))
+        f.write("\n")
+    mutation_mat[selected_cell_indices, selected_character_indices] = 3
+    char_mat = mutation_mat[:,:]
+    np.savetxt(f'{prefix}scite_{t}_{error_rate}_{sd}.csv', char_mat.T, delimiter=' ', fmt='%d')
+
     timepoints = []
     for tp in range(t):
         for i in range(ncells):
