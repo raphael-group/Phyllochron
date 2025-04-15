@@ -17,5 +17,5 @@ threshold_parameter_AML88: 6 #32
 threshold_parameter_AML99: 10 # 29
 threshold_parameter_AML38: 9
 
-cell_parameter:  0.002
+cell_parameter:  0.00000001
 

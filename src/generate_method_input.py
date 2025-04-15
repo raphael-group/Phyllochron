@@ -75,6 +75,8 @@ def produce_readcount_input(args):
 
 
     
+    print('got here')
+    
     dfs_to_merge = []
     size = []
     for sample in list(range(1,ntimepoints+1)):
@@ -90,6 +92,7 @@ def produce_readcount_input(args):
     
         nfiltered_index = []
         
+
         for r in range(filtered_values.shape[0]):
             zygozity_aware_matrix[r, :] = filtered_values[r,:]
             nfiltered_index.append(filtered_index[r] + '_1')
@@ -101,6 +104,7 @@ def produce_readcount_input(args):
     merged_df = pd.concat(dfs_to_merge, axis=1).transpose()   # Initialize with the first DataFrame
     merged_df.fillna(-1, inplace=True)
     merged_df.index = range(len(merged_df))
+
     
     timepoints = []
 
@@ -122,9 +126,15 @@ def produce_readcount_input(args):
 
 
     df_missing = pd.DataFrame(data/data_total, columns=merged_df.columns)
+    #selected_mutations = df_missing.loc[:, ((df_missing >= 0.05)).any()].columns
+    selected_mutations = df_missing.columns
 
-    selected_mutations = df_missing.loc[:, (df_missing >= 0.05).any()].columns
-    merged_df[selected_mutations].to_csv(f'method_input/{patient_name}_total_readcounts.csv')    
+    all_zero_indices = merged_df[selected_mutations].index[
+        (merged_df[selected_mutations] == 0).sum(axis=1) >= (len(selected_mutations))
+    ].tolist()
+    merged_df[selected_mutations].drop(all_zero_indices, axis=0).reset_index(drop=True).to_csv(f'method_input/{patient_name}_total_readcounts.csv')    
+    
+    df.drop(all_zero_indices, axis=0).reset_index(drop=True).to_csv(f'method_input/{patient_name}_timepoints.csv')
 
 
     dfs_to_merge = []
@@ -164,21 +174,20 @@ def produce_readcount_input(args):
     merged_df_var = pd.concat(dfs_to_merge, axis=1).transpose()   # Initialize with the first DataFrame
     merged_df_var.fillna(-1, inplace=True)
     merged_df_var.index = range(len(merged_df_var))
-    merged_df_var[selected_mutations].to_csv(f'method_input/{patient_name}_variant_readcounts.csv')    
+    merged_df_var[selected_mutations].drop(all_zero_indices, axis=0).reset_index(drop=True).to_csv(f'method_input/{patient_name}_variant_readcounts.csv')    
 
 
-
-    
+    num_cells = merged_df.drop(all_zero_indices, axis=0).reset_index(drop=True).shape[0]
     with open(f'method_input/{patient_name}_COMPASS_variants.csv', "w") as vcf:
-        vcf.write("CHR,REF,ALT,REGION,NAME,FREQ," + ",".join([str(i) for i in range(merged_df.shape[0])]) + "\n")            
+        vcf.write("CHR,REF,ALT,REGION,NAME,FREQ," + ",".join([str(i) for i in range(num_cells)]) + "\n")            
         for i, mutation in enumerate(selected_mutations):
             print(mutation)
             chrom = mutation.split(':')[0]
             pos = mutation
             vid = '.'
 
-            vs = list(merged_df_var[mutation])
-            ts = list(merged_df[mutation])
+            vs = list(merged_df_var.drop(all_zero_indices, axis=0).reset_index(drop=True)[mutation])
+            ts = list(merged_df.drop(all_zero_indices, axis=0).reset_index(drop=True)[mutation])
             ref = 'A'
             alt = 'T'
             qual = '.'

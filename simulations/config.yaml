@@ -1,31 +1,45 @@
 ntimepoints:
   - 3
+  - 4
   - 5
-  - 7
 
-nseeds: 20
+nmutations: 10
 
-ncells_readcount: 100
-threshold_readcount: 0.167
+nseeds: 50
+
+ncells_readcount: 
+  - 100
+
+ncells_limited:
+  - 100
+
+threshold_readcount: 0.05
 
 error_rate_readcount:
   - 0.01
-  - 0.025
   - 0.05
-  - 0.075
   - 0.10
+  - 0.20
+  - 0.40
 
 
 estimated_fp: 0.13
-estimated_fn: 0.16
+estimated_fn: 0.12
 
 read_depth: 30
 ado: 15
 
 mutation_tree: 'adversarial_tree.csv'
-nmutations: 5
 
 SCITE_installation: '/n/fs/ragr-data/users/palash/SCITE/scite'
 SPhyR_installation: '/n/fs/ragr-data/users/palash/SPhyR/build/kDPFC'
 COMPASS_installation: '/n/fs/ragr-data/users/aj7381/COMPASS/COMPASS'
 PhyloVar_installation: '/n/fs/ragr-data/users/aj7381/Phylovar/src/phylovar.py'
+sclongtree_installation: '/n/fs/ragr-research/users/aj7381/sc_longitudinal_infer/algorithm/selectBestTree.py'
+lace_installation: '/n/fs/ragr-research/users/aj7381/sc_longitudinal_infer/LACE_exp/run_LACE.R'
+lace_output_installation: '/n/fs/ragr-research/users/aj7381/sc_longitudinal_infer/LACE_exp/read_LACE_inference.R'
+bnpc_installation: '/n/fs/ragr-research/users/aj7381/BnpC/run_BnpC.py'
+Rdata_conversion_script: '/n/fs/ragr-research/users/aj7381/sc_longitudinal_infer/simulation/convertCSVToRData.R'
+
+
+

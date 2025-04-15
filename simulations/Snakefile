@@ -6,36 +6,48 @@ seeds = [ i for i in range(config["nseeds"])]
 
 
 
+
 rule all:
     input:
       # simulation
-      expand('ground_truth_rc/phyllochron_{t}_{prop}_{sd}_variant_readcounts.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
-      expand('ground_truth_rc/phyllochron_{t}_{prop}_{sd}_total_readcounts.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
-      expand('ground_truth_rc/phyllochron_{t}_{prop}_{sd}_timepoints.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
-      expand('ground_truth_rc/compass_{t}_{prop}_{sd}_variants.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
-      expand('ground_truth_rc/phylovar_{t}_{prop}_{sd}.mpileup', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
-      expand('ground_truth_rc/phylovar_{t}_{prop}_{sd}.names', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
-      expand('ground_truth_rc/gt_readcount_{t}_{prop}_{sd}.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
-      expand('ground_truth_rc/sphyr_{t}_{prop}_{sd}.txt', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
-      expand('ground_truth_rc/scite_{t}_{prop}_{sd}.csv',sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
-
+      expand('ground_truth_rc/phyllochron_{n}_{t}_{prop}_{sd}_variant_readcounts.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+      expand('ground_truth_rc/phyllochron_{n}_{t}_{prop}_{sd}_total_readcounts.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+      expand('ground_truth_rc/phyllochron_{n}_{t}_{prop}_{sd}_timepoints.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+      expand('ground_truth_rc/compass_{n}_{t}_{prop}_{sd}_variants.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+      expand('ground_truth_rc/phylovar_{n}_{t}_{prop}_{sd}.mpileup', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_limited']),
+      expand('ground_truth_rc/phylovar_{n}_{t}_{prop}_{sd}.names', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_limited']),
+      expand('ground_truth_rc/gt_readcount_{n}_{t}_{prop}_{sd}.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+      expand('ground_truth_rc/sphyr_{n}_{t}_{prop}_{sd}.txt', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+      expand('ground_truth_rc/scite_{n}_{t}_{prop}_{sd}.csv',sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+      #expand('ground_truth_rc/sclongtree_{n}_{t}_{prop}_{sd}_cell_timepoints.csv',sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+      expand('ground_truth_rc/sclongtree_{n}_{t}_{prop}_{sd}_genotype_matrix.csv',sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
 
       # SPhyR
-      expand('SPhyR/sphyr_{t}_{prop}_{sd}.txt', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
+      expand('SPhyR/sphyr_{n}_{t}_{prop}_{sd}.txt', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
       # SCITE
-      expand('SCITE/scite_{t}_{prop}_{sd}_ml0.gv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
+      expand('SCITE/scite_{n}_{t}_{prop}_{sd}_ml0.gv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
       # Phyllochron
-      expand('Phyllochron_RC/phyllochron_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
+      expand('Phyllochron_RC/phyllochron_{n}_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
 
       # Phyllochron-PP
-      expand('Phyllochron_PP_RC/phyllochron_pp_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
+      expand('Phyllochron_PP_RC/phyllochron_pp_{n}_{t}_{prop}_{sd}_B.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+      
+      # sclongtree 
+      expand('BnpC/BnpC_{n}_{t}_{prop}_{sd}/m1/t0/genotypes_cont_posterior_mean.tsv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_limited']),
+      expand('sclongtree/sclongtree_{n}_{t}_{prop}_{sd}.csv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_limited']),
+    
 
-      # PhyloVar
-      expand('PhyloVar/phylovar_{t}_{prop}_{sd}/snv.vcf.mat', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
+      # LACE
+      expand('rdata/{n}_{t}_{prop}_{sd}_genotype_matrix.RData', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+      expand("LACE/{n}_{t}_{prop}_{sd}_tree.RData", sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+       expand("LACE/{n}_{t}_{prop}_{sd}_genotype_matrix.csv", sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+
+# PhyloVar
+      expand('PhyloVar/phylovar_{n}_{t}_{prop}_{sd}/snv.vcf.mat', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_limited']),
 
       # COMPASS
-      expand('COMPASS/compass_{t}_{prop}_{sd}_cellAssignments.tsv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
-      expand('COMPASS/compass_{t}_{prop}_{sd}_nodes_genotypes.tsv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount']),
+      expand('COMPASS/compass_{n}_{t}_{prop}_{sd}_cellAssignments.tsv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
+      expand('COMPASS/compass_{n}_{t}_{prop}_{sd}_nodes_genotypes.tsv', sd=seeds, t=config['ntimepoints'], prop=config['error_rate_readcount'], n=config['ncells_readcount']),
 
 
 
@@ -44,43 +56,46 @@ rule simulation_readcount:
   input:
         mutation_tree=config['mutation_tree'],
   output:
-        variant_reads='ground_truth_rc/phyllochron_{t}_{prop}_{sd}_variant_readcounts.csv',
-        total_reads='ground_truth_rc/phyllochron_{t}_{prop}_{sd}_total_readcounts.csv',
-        timepoints="ground_truth_rc/phyllochron_{t}_{prop}_{sd}_timepoints.csv",
-        phylovar_pileup='ground_truth_rc/phylovar_{t}_{prop}_{sd}.mpileup',
-        phylovar_names='ground_truth_rc/phylovar_{t}_{prop}_{sd}.names',
-        compass_file='ground_truth_rc/compass_{t}_{prop}_{sd}_variants.csv',
-        ground_truth='ground_truth_rc/gt_readcount_{t}_{prop}_{sd}.csv',
-        sphyr_file='ground_truth_rc/sphyr_{t}_{prop}_{sd}.txt',
-        scite_file='ground_truth_rc/scite_{t}_{prop}_{sd}.csv',
+        variant_reads='ground_truth_rc/phyllochron_{n}_{t}_{prop}_{sd}_variant_readcounts.csv',
+        total_reads='ground_truth_rc/phyllochron_{n}_{t}_{prop}_{sd}_total_readcounts.csv',
+        timepoints="ground_truth_rc/phyllochron_{n}_{t}_{prop}_{sd}_timepoints.csv",
+        phylovar_pileup='ground_truth_rc/phylovar_{n}_{t}_{prop}_{sd}.mpileup',
+        phylovar_names='ground_truth_rc/phylovar_{n}_{t}_{prop}_{sd}.names',
+        compass_file='ground_truth_rc/compass_{n}_{t}_{prop}_{sd}_variants.csv',
+        ground_truth='ground_truth_rc/gt_readcount_{n}_{t}_{prop}_{sd}.csv',
+        sphyr_file='ground_truth_rc/sphyr_{n}_{t}_{prop}_{sd}.txt',
+        scite_file='ground_truth_rc/scite_{n}_{t}_{prop}_{sd}.csv',
+        sclongtree_genotypes='ground_truth_rc/sclongtree_{n}_{t}_{prop}_{sd}_genotype_matrix.csv',
+        sclongtree_cell_timepoints='ground_truth_rc/sclongtree_{n}_{t}_{prop}_{sd}_timepoints.csv',
+        mutation_tree='ground_truth_rc/gt_tree_{n}_{t}_{prop}_{sd}.csv',
   params:
         prefix="ground_truth_rc/",
-        ncells=config['ncells_readcount'],
         rd=config['read_depth'],
-        ado=config['ado']
+        ado=config['ado'],
+        nmutations=config['nmutations'],
   log:
-        std="ground_truth_rc/{t}_{prop}_{sd}.log", 
-        err="ground_truth_rc/{t}_{prop}_{sd}.err.log",
+        std="ground_truth_rc/{n}_{t}_{prop}_{sd}.log", 
+        err="ground_truth_rc/{n}_{t}_{prop}_{sd}.err.log",
   shell:
-        "python ../src/readcount_simulation_engine.py -t {wildcards.t} --sd {wildcards.sd} -rd {params.rd} --ado {params.ado} --ncells {params.ncells} -o {params.prefix}"
-        " --error-rate {wildcards.prop} --profiles {input.mutation_tree}"
+        "python ../src/readcount_simulation_engine.py -t {wildcards.t} --sd {wildcards.sd} -rd {params.rd} --ado {params.ado} --ncells {wildcards.n} -o {params.prefix}"
+        " --error-rate {wildcards.prop} --profiles {input.mutation_tree} --nmutations {params.nmutations}"
         " 1> {log.std} 2> {log.err}"
 
 
 rule sphyr:
   input:
-        input_file='ground_truth_rc/sphyr_{t}_{prop}_{sd}.txt',
+        input_file='ground_truth_rc/sphyr_{n}_{t}_{prop}_{sd}.txt',
   params:
-        ncells=lambda wildcards: int(config['ncells_readcount']) * int(wildcards.t),
+        ncells=lambda wildcards: int(wildcards.n) * int(wildcards.t),
         sphyr_install=config['SPhyR_installation'],
         nmutations=config['nmutations'] + 1,
-        fp=config['estimated_fp'],
-        fn=lambda wildcards: wildcards.prop,
+        fn=lambda wildcards: {'0.01': 0.009, '0.05': 0.04, '0.1': 0.075, '0.2': 0.134, '0.4': 0.215}[wildcards.prop],
+        fp=0.001,
   log:
-        std="SPhyR/{t}_{prop}_{sd}.log", 
-        err="SPhyR/{t}_{prop}_{sd}.err.log",
+        std="SPhyR/{n}_{t}_{prop}_{sd}.log", 
+        err="SPhyR/{n}_{t}_{prop}_{sd}.err.log",
   output:
-        output_file='SPhyR/sphyr_{t}_{prop}_{sd}.txt',
+        output_file='SPhyR/sphyr_{n}_{t}_{prop}_{sd}.txt',
   shell:
         "{params.sphyr_install} {input.input_file} {output.output_file} -a {params.fp} -b {params.fn}"
         " -lT {params.ncells} -lC {params.nmutations} -k 0"
@@ -88,19 +103,19 @@ rule sphyr:
 
 rule scite:
   input:
-        input_file='ground_truth_rc/scite_{t}_{prop}_{sd}.csv',
+        input_file='ground_truth_rc/scite_{n}_{t}_{prop}_{sd}.csv',
   params:
-        ncells=lambda wildcards: int(config['ncells_readcount']) * int(wildcards.t),
+        ncells=lambda wildcards: int(wildcards.n) * int(wildcards.t),
         scite_install=config['SCITE_installation'],
         nmutations=config['nmutations'],
-        fp=config['estimated_fp'],
-        fn=lambda wildcards: wildcards.prop,
-        output_prefix='SCITE/scite_{t}_{prop}_{sd}',
+        fn=lambda wildcards: {'0.01': 0.009, '0.05': 0.04, '0.1': 0.075, '0.2': 0.134, '0.4': 0.215}[wildcards.prop],
+        fp=0.001,
+        output_prefix='SCITE/scite_{n}_{t}_{prop}_{sd}',
   log:
-        std="SCITE/{t}_{prop}_{sd}.log", 
-        err="SCITE/{t}_{prop}_{sd}.err.log",
+        std="SCITE/{n}_{t}_{prop}_{sd}.log", 
+        err="SCITE/{n}_{t}_{prop}_{sd}.err.log",
   output:
-        output_file='SCITE/scite_{t}_{prop}_{sd}_ml0.gv',
+        output_file='SCITE/scite_{n}_{t}_{prop}_{sd}_ml0.gv',
   shell:
         "{params.scite_install} -i {input.input_file} -n {params.nmutations} -m {params.ncells} -o {params.output_prefix} -a -cc 0 -l 1000 -r 1"
         " -fd {params.fp} -ad {params.fn} -max_treelist_size 1"
@@ -109,56 +124,56 @@ rule scite:
 
 rule phylovar:
   input:
-        mpileup_file='ground_truth_rc/phylovar_{t}_{prop}_{sd}.mpileup',
-        names_file='ground_truth_rc/phylovar_{t}_{prop}_{sd}.names',
+        mpileup_file='ground_truth_rc/phylovar_{n}_{t}_{prop}_{sd}.mpileup',
+        names_file='ground_truth_rc/phylovar_{n}_{t}_{prop}_{sd}.names',
   params:
         phylovar_install=config['PhyloVar_installation'],
-        output_prefix='PhyloVar/phylovar_{t}_{prop}_{sd}'
+        output_prefix='PhyloVar/phylovar_{n}_{t}_{prop}_{sd}'
   log:
-        std="PhyloVar/{t}_{prop}_{sd}.log", 
-        err="PhyloVar/{t}_{prop}_{sd}.err.log",
+        std="PhyloVar/{n}_{t}_{prop}_{sd}.log", 
+        err="PhyloVar/{n}_{t}_{prop}_{sd}.err.log",
   output:
-        output_file='PhyloVar/phylovar_{t}_{prop}_{sd}/snv.vcf.mat',
+        output_file='PhyloVar/phylovar_{n}_{t}_{prop}_{sd}/snv.vcf.mat',
   shell:
         "{params.phylovar_install} -indir ./ -names {input.names_file} -infile {input.mpileup_file} -o {params.output_prefix} -niter 300"
         " 1> {log.std} 2> {log.err}"
 
 rule compass:
   input:
-        compass_file='ground_truth_rc/compass_{t}_{prop}_{sd}_variants.csv',
+        compass_file='ground_truth_rc/compass_{n}_{t}_{prop}_{sd}_variants.csv',
   params:
         compass_install=config['COMPASS_installation'],
-        input_prefix='ground_truth_rc/compass_{t}_{prop}_{sd}',
-        output_prefix='COMPASS/compass_{t}_{prop}_{sd}',
-        error_rate=lambda wildcards: float(wildcards.prop)
+        input_prefix='ground_truth_rc/compass_{n}_{t}_{prop}_{sd}',
+        output_prefix='COMPASS/compass_{n}_{t}_{prop}_{sd}',
+        error_rate=0.001,
   log:
-        std="COMPASS/{t}_{prop}_{sd}.log", 
-        err="COMPASS/{t}_{prop}_{sd}.err.log",
+        std="COMPASS/{n}_{t}_{prop}_{sd}.log", 
+        err="COMPASS/{n}_{t}_{prop}_{sd}.err.log",
   output:
-        output_assignment='COMPASS/compass_{t}_{prop}_{sd}_cellAssignments.tsv',
-        output_genotype='COMPASS/compass_{t}_{prop}_{sd}_nodes_genotypes.tsv',
+        output_assignment='COMPASS/compass_{n}_{t}_{prop}_{sd}_cellAssignments.tsv',
+        output_genotype='COMPASS/compass_{n}_{t}_{prop}_{sd}_nodes_genotypes.tsv',
   shell:
-        "{params.compass_install} -i {params.input_prefix} -o {params.output_prefix} --nchains 1 --chainlength 100 --CNA 0 --seqerror {params.error_rate} "
+        "{params.compass_install} -i {params.input_prefix} -o {params.output_prefix} --nchains 1 --chainlength 500 --CNA 0 --seqerror {params.error_rate} "
         " 1> {log.std} 2> {log.err}"
 
 
 
 rule phyllochron_readcount:
   input:
-        total_reads='ground_truth_rc/phyllochron_{t}_{prop}_{sd}_total_readcounts.csv',
-        variant_reads='ground_truth_rc/phyllochron_{t}_{prop}_{sd}_variant_readcounts.csv',
-        timepoints='ground_truth_rc/phyllochron_{t}_{prop}_{sd}_timepoints.csv',
-        mutation_tree=config['mutation_tree'],
+        total_reads='ground_truth_rc/phyllochron_{n}_{t}_{prop}_{sd}_total_readcounts.csv',
+        variant_reads='ground_truth_rc/phyllochron_{n}_{t}_{prop}_{sd}_variant_readcounts.csv',
+        timepoints='ground_truth_rc/phyllochron_{n}_{t}_{prop}_{sd}_timepoints.csv',
+        mutation_tree='COMPASS/compass_{n}_{t}_{prop}_{sd}_nodes_genotypes.tsv',
   params:
-        fp=0.1,
-        fn=0.1,
+        fn=lambda wildcards: {'0.01': 0.009, '0.05': 0.04, '0.1': 0.075, '0.2': 0.134, '0.4': 0.215}[wildcards.prop],
+        fp=0.001,
         z=config['threshold_readcount'],
-        output_prefix='Phyllochron_RC/phyllochron_{t}_{prop}_{sd}',
+        output_prefix='Phyllochron_RC/phyllochron_{n}_{t}_{prop}_{sd}',
   log:
-        std="Phyllochron_RC/{t}_{prop}_{sd}.log", 
-        err="Phyllochron_RC/{t}_{prop}_{sd}.err.log",
+        std="Phyllochron_RC/{n}_{t}_{prop}_{sd}.log", 
+        err="Phyllochron_RC/{n}_{t}_{prop}_{sd}.err.log",
   output:
-        output_matrix='Phyllochron_RC/phyllochron_{t}_{prop}_{sd}_B.csv',
+        output_matrix='Phyllochron_RC/phyllochron_{n}_{t}_{prop}_{sd}_B.csv',
   shell:
         "python ../src/phyllochron.py -v {input.variant_reads} -r {input.total_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
         " --threshold {params.z} -a {params.fp} -b {params.fn} -o {params.output_prefix} "
@@ -166,22 +181,110 @@ rule phyllochron_readcount:
 
 rule phyllochron_pp_readcount:
   input:
-        total_reads='ground_truth_rc/phyllochron_{t}_{prop}_{sd}_total_readcounts.csv',
-        variant_reads='ground_truth_rc/phyllochron_{t}_{prop}_{sd}_variant_readcounts.csv',
-        timepoints='ground_truth_rc/phyllochron_{t}_{prop}_{sd}_timepoints.csv',
-        mutation_tree=config['mutation_tree'],
+        total_reads='ground_truth_rc/phyllochron_{n}_{t}_{prop}_{sd}_total_readcounts.csv',
+        variant_reads='ground_truth_rc/phyllochron_{n}_{t}_{prop}_{sd}_variant_readcounts.csv',
+        timepoints='ground_truth_rc/phyllochron_{n}_{t}_{prop}_{sd}_timepoints.csv',
+        mutation_tree='COMPASS/compass_{n}_{t}_{prop}_{sd}_nodes_genotypes.tsv',
   params:
-        fp=config['estimated_fp'],
-        fn=lambda wildcards: wildcards.prop,
+        fn=lambda wildcards: {'0.01': 0.009, '0.05': 0.04, '0.1': 0.075, '0.2': 0.134, '0.4': 0.215}[wildcards.prop],
+        fp=0.001,
         z=0,
-        output_prefix='Phyllochron_PP_RC/phyllochron_pp_{t}_{prop}_{sd}',
+        output_prefix='Phyllochron_PP_RC/phyllochron_pp_{n}_{t}_{prop}_{sd}',
   log:
-        std="Phyllochron_PP_RC/{t}_{prop}_{sd}.log", 
-        err="Phyllochron_PP_RC/{t}_{prop}_{sd}.err.log",
+        std="Phyllochron_PP_RC/{n}_{t}_{prop}_{sd}.log", 
+        err="Phyllochron_PP_RC/{n}_{t}_{prop}_{sd}.err.log",
   output:
-        output_matrix='Phyllochron_PP_RC/phyllochron_pp_{t}_{prop}_{sd}_B.csv',
+        output_matrix='Phyllochron_PP_RC/phyllochron_pp_{n}_{t}_{prop}_{sd}_B.csv',
   shell:
         "python ../src/phyllochron.py -v {input.variant_reads} -r {input.total_reads} -t {input.timepoints} --mutation-tree {input.mutation_tree}"
         " --threshold {params.z} -a {params.fp} -b {params.fn} -o {params.output_prefix} --run-pp True "
         " 1> {log.std} 2> {log.err}"
+
+
+rule sclongtree:
+  input:
+        genotypes='ground_truth_rc/sclongtree_{n}_{t}_{prop}_{sd}_genotype_matrix.csv',
+        output_matrix='BnpC/BnpC_{n}_{t}_{prop}_{sd}/m1/t0/genotypes_cont_posterior_mean.tsv',
+  params:
+        sclongtree_installation=config["sclongtree_installation"],
+        k=0,
+        t=lambda wildcards: ' '.join(f"t{i}" for i in range(int(wildcards.t))),
+        cell_timepoints='ground_truth_rc/sclongtree_{n}_{t}_{prop}_{sd}_timepoints.csv',
+        input_fp='/n/fs/ragr-research/users/aj7381/Phyllochron/simulations/BnpC/BnpC_{n}_{t}_{prop}_{sd}',
+        output_prefix='sclongtree/sclongtree_{n}_{t}_{prop}_{sd}',
+  log:
+        std="sclongtree/{n}_{t}_{prop}_{sd}.log", 
+        err="sclongtree/{n}_{t}_{prop}_{sd}.err.log",
+  output:
+        output_matrix='sclongtree/sclongtree_{n}_{t}_{prop}_{sd}.csv',
+  shell:
+        "python {params.sclongtree_installation} -m 1 -t {params.t} -loc {params.input_fp} -cells {params.cell_timepoints} -D {input.genotypes} -k {params.k} -op {params.output_prefix}"
+        " 1> {log.std} 2> {log.err}"
+
+rule lace:
+  input:
+        genotype_matrix="rdata/{n}_{t}_{prop}_{sd}_genotype_matrix.RData",
+  params:
+        lace_script=config["lace_installation"],
+  output:
+        output_file="LACE/{n}_{t}_{prop}_{sd}_tree.RData",
+  log:
+        std="LACE/{n}_{t}_{prop}_{sd}.log", 
+        err="LACE/{n}_{t}_{prop}_{sd}.err.log",
+  shell:
+        "Rscript {params.lace_script} {input.genotype_matrix} {output.output_file} "
+        "1> {log.std} 2> {log.err}"
+
+rule lace_output:
+    input:
+        tree_file="LACE/{n}_{t}_{prop}_{sd}_tree.RData",
+    params:
+        lace_output_script=config["lace_output_installation"],
+    output:
+        output_file="LACE/{n}_{t}_{prop}_{sd}_genotype_matrix.csv",
+    log:
+        std="LACE/output_{n}_{t}_{prop}_{sd}.log", 
+        err="LACE/output_{n}_{t}_{prop}_{sd}.err.log",
+    shell:
+        "Rscript {params.lace_output_script} {input.tree_file} {output.output_file} "
+        "1> {log.std} 2> {log.err}"
+
+rule produce_Rdata:
+  input:
+        genotypes='ground_truth_rc/sclongtree_{n}_{t}_{prop}_{sd}_genotype_matrix.csv',
+  params:
+        rdata_script= config["Rdata_conversion_script"],
+  output: 
+        rdata_file="rdata/{n}_{t}_{prop}_{sd}_genotype_matrix.RData",
+  log:
+        std="rdata/{n}_{t}_{prop}_{sd}.log", 
+        err="rdata/{n}_{t}_{prop}_{sd}.err.log",
+  shell:
+        "Rscript {params.rdata_script} {input.genotypes} {wildcards.n} {wildcards.t} {output.rdata_file} "
+        "1> {log.std} 2> {log.err}"
+
+rule bnpc:
+  input:
+        genotypes='ground_truth_rc/sclongtree_{n}_{t}_{prop}_{sd}_genotype_matrix.csv',
+  params:
+        bnpc_installation=config["bnpc_installation"],
+        output_prefix='BnpC/BnpC_{n}_{t}_{prop}_{sd}/m1',
+        genotypes_prefix='ground_truth_rc/sclongtree_{n}_{t}_{prop}_{sd}_',
+  log:
+        std="BnpC/{n}_{t}_{prop}_{sd}.log", 
+        err="BnpC/{n}_{t}_{prop}_{sd}.err.log",
+  output:
+        output_matrix='BnpC/BnpC_{n}_{t}_{prop}_{sd}/m1/t0/genotypes_cont_posterior_mean.tsv',
+  shell:
+        """
+        for ((k=0; k<{wildcards.t}; k++)); do
+          python {params.bnpc_installation} -t {params.genotypes_prefix}"$k"_genotype_matrix.csv -o {params.output_prefix}/t"$k" 1> {log.std} 2> {log.err}
+        done
+        """
+
+
+
+
+
+
 

@@ -85,20 +85,28 @@ def select_mutations(args):
         #vafs = fast_divide(ds['AD'][result,:],ds['DP'][result,:])
         np.nan_to_num(vafs, copy=False,nan=0)
         if patient_name == "AML-99":
+            #row_indices = np.where(np.sum((vafs >= 0.25), axis=1) >= 0.10*ds.shape[1])[0]
+            #row_indices_neg = np.where(np.sum((vafs >= 0.20), axis=1) <= 0.10*ds.shape[1])[0]
             row_indices = np.where(np.sum((vafs >= 0.35), axis=1) >= 0.10*ds.shape[1])[0]
             row_indices_neg = np.where(np.sum((vafs >= 0.35), axis=1) <= 0.90*ds.shape[1])[0]
+
         elif patient_name == 'AML-88':
-            row_indices = np.where(np.sum((vafs >= 0.35), axis=1) >= 0.50*ds.shape[1])[0]
-            row_indices_neg = np.where(np.sum((vafs >= 0.35), axis=1) <= 0.50*ds.shape[1])[0]
+            #row_indices = np.where(np.sum((vafs >= 0.25), axis=1) >= 0.50*ds.shape[1])[0]
+            #row_indices_neg = np.where(np.sum((vafs >= 0.25), axis=1) <= 0.50*ds.shape[1])[0]
+            row_indices = np.where(np.sum((vafs >= 0.35), axis=1) >= 0.10*ds.shape[1])[0]
+            row_indices_neg = np.where(np.sum((vafs >= 0.35), axis=1) <= 0.90*ds.shape[1])[0]
         elif patient_name == 'AML-63':
             row_indices = np.where(np.sum((vafs >= 0.05), axis=1) >= 0.15*ds.shape[1])[0]
             row_indices_neg = np.where(np.sum((vafs >= 0.05), axis=1) <= 1.00*ds.shape[1])[0]
         elif patient_name == 'AML-97':
-            row_indices = np.where(np.sum((vafs >= 0.35), axis=1) >= 0.50*ds.shape[1])[0]
-            row_indices_neg = np.where(np.sum((vafs >= 0.35), axis=1) <= 0.50*ds.shape[1])[0]
+            #row_indices = np.where(np.sum((vafs >= 0.20), axis=1) >= 0.40*ds.shape[1])[0]
+            #row_indices_neg = np.where(np.sum((vafs >= 0.15), axis=1) <= 0.10*ds.shape[1])[0]
+            row_indices = np.where(np.sum((vafs >= 0.35), axis=1) >= 0.10*ds.shape[1])[0]
+            row_indices_neg = np.where(np.sum((vafs >= 0.35), axis=1) <= 0.90*ds.shape[1])[0]
+
         elif patient_name == 'AML-38':
-            row_indices = np.where(np.sum((vafs >= 0.35), axis=1) >= 0.25*ds.shape[1])[0]
-            row_indices_neg = np.where(np.sum((vafs >= 0.35), axis=1) <= 0.75*ds.shape[1])[0]
+            row_indices = np.where(np.sum((vafs >= 0.25), axis=1) >= 0.25*ds.shape[1])[0]
+            row_indices_neg = np.where(np.sum((vafs >= 0.25), axis=1) <= 0.65*ds.shape[1])[0]
 
 
 
@@ -117,9 +125,11 @@ def select_mutations(args):
     mutations_of_interest = set.intersection(*[mutations_of_interest, mutations_of_interest_neg])
     
 
+
     for mutation in sorted(mutations_of_interest):
         print(mutation)
     
+    print(len(mutations_of_interest))
     annotations = {i:"_".join(i.split(':')) for i in mutations_of_interest}
     
     with open(f'{args.o}_mutations.pkl', 'wb') as f:

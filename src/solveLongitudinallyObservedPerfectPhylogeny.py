@@ -16,6 +16,7 @@ from scipy.stats import betabinom
 from scipy.special import gammaln, logsumexp
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor
+import ete3
 
 class solveLongitudinallyObservedPerfectPhylogeny():
 
@@ -36,7 +37,8 @@ class solveLongitudinallyObservedPerfectPhylogeny():
         
         for i in range(len(self.timepoints)):
             self.timepoint_cell_map[self.timepoints[i]].append(i)
-        
+
+        count = 0
         # read count matrices
         self.df_total_readcounts = df_total_readcounts        
         self.df_variant_readcounts = df_variant_readcounts        
@@ -60,7 +62,7 @@ class solveLongitudinallyObservedPerfectPhylogeny():
             self.z = z
             self.iscloneConstrained = True
         
-        print(self.z)
+
         self.threshold = threshold
         self.run_pp = run_pp
         self.brute_force = brute_force
@@ -88,7 +90,7 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                         coeff_mat[cell_idx, mut_idx] = coeff
                     else:
                         if total_reads > 0:
-                            coeff = betabinom.logpmf(variant_reads, total_reads, 1, 1) - betabinom.logpmf(variant_reads, total_reads, bb_alpha, bb_beta)
+                            coeff = betabinom.logpmf(variant_reads, total_reads,1,1) - betabinom.logpmf(variant_reads, total_reads, bb_alpha, bb_beta)
                             coeff_mat[cell_idx, mut_idx] = coeff
                     
             self.coeff_mat = coeff_mat                    
@@ -248,13 +250,15 @@ class solveLongitudinallyObservedPerfectPhylogeny():
             mutation_trees.append(self.mutation_tree)
         
         AML99_tree = nx.DiGraph()
-        AML99_tree.add_edges_from([(0,3), (3,1), (1,2), (1,6), (6,7), (7,8), (6,4), (6,5)])
+        #AML99_tree.add_edges_from([(0,3), (3,1), (1,2), (1,6), (6,7), (7,8), (6,4), (6,5)])
+        #AML99_tree.add_edges_from([(0,2), (2,1), (2,3), (3,6), (6,4), (2,5)])
+
         #AML99_tree.add_edges_from([(4,2), (4,3), (2,1), (2,0)])
 
 
         def generate_perfect_phylogeny_matrix(graph):
             root = [node for node, indegree in graph.in_degree() if indegree == 0][0]
-            normal_profile = np.zeros(len(graph.nodes()))
+            normal_profile = np.zeros(len(graph.nodes()) - 1)
             profiles = [normal_profile]
             def rec_generation(curr_node, curr_profile, profiles):
                 profiles.append(curr_profile)
@@ -264,10 +268,11 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                     rec_generation(child, new_profile, profiles)
                     
             f_profile = normal_profile.copy()
-            f_profile[int(root)] = 1
+            #f_profile[int(root)] = 1
             rec_generation(root, f_profile, profiles)
             matrix = np.array(profiles)
             return matrix
+
         def get_subtree_nodes(graph, node):
             return nx.descendants(graph, node) | {node}
 
@@ -296,17 +301,119 @@ class solveLongitudinallyObservedPerfectPhylogeny():
             nodes = list(graph.nodes())
 
             for prune_node in nodes:
+                if prune_node != "root":
+                    for regraft_node in nodes:
+                        if prune_node != regraft_node:
+                            if regraft_node not in get_subtree_nodes(graph, prune_node):
+                                new_tree = perform_spr(graph, prune_node, regraft_node)
+                                
+                                spr_trees.append(generate_perfect_phylogeny_matrix(new_tree))
+                
+            return spr_trees
+        
+        def ppm_to_tree(matrix):
+            matrix = np.unique(matrix, axis=0)
+            matrix = matrix[np.argsort(np.sum(matrix == 1, axis=1))]
+            root = ete3.Tree()
+            ancestral_chars = [c for c in range(matrix.shape[1]) if sum(matrix[:,c]) == 0]
+            poset = []
+            init_len = len(ancestral_chars)
+
+            while len(ancestral_chars) < matrix.shape[1]:
+                for char in range(matrix.shape[1]):
+                    if char not in ancestral_chars:
+                        for row in range(matrix.shape[0]):
+                            if matrix[row, char] == 1:
+                                if all([matrix[row, c] == 0 for c in range(matrix.shape[1]) if c != char and c not in ancestral_chars]):
+                                    all_anc = [c for c in ancestral_chars if matrix[row,c] == 1]
+                                    if len(all_anc) == 0:
+                                        d_anc = root
+                                    else:
+                                        d_anc = root.search_nodes(name=str(all_anc[-1]))[0]
+                                    
+                                    nchild = d_anc.add_child(name=str(char))
+                                    poset.append(char)
+                                    ancestral_chars.append(char)
+                                    break
+                
+                if len(ancestral_chars) == init_len:
+                    for char in range(matrix.shape[1]):
+                        if char not in ancestral_chars:
+                            for row in range(matrix.shape[0]):
+                                if matrix[row, char] == 1:
+                                    all_anc = [c for c in ancestral_chars if matrix[row,c] == 1]
+                                    if len(all_anc) == 0:
+                                        d_anc = root
+                                    else:
+                                        d_anc = root.search_nodes(name=str(all_anc[-1]))[0]
+
+                                    nchild = d_anc.add_child(name=str(char))
+                                    poset.append(char)
+                                    ancestral_chars.append(char)
+                                    break
+                
+                init_len = len(ancestral_chars)
+
+            return root
+        
+
+
+        def generate_all_spr_trees_sim(graph):
+            spr_trees = []
+            nodes = list(graph.nodes())
+
+            for prune_node in nodes:
                 for regraft_node in nodes:
                     if prune_node != regraft_node:
                         if regraft_node not in get_subtree_nodes(graph, prune_node):
                             new_tree = perform_spr(graph, prune_node, regraft_node)
-                            
                             spr_trees.append(generate_perfect_phylogeny_matrix(new_tree))
                 
             return spr_trees
+        
 
-        original_matrix = generate_perfect_phylogeny_matrix(AML99_tree)
-        spr_trees = generate_all_spr_trees(AML99_tree)
+
+        # Function to recursively add nodes and edges to the NetworkX tree
+        nx_tree = nx.DiGraph()
+        def ete_to_nx(ete_node, parent=None):
+
+            # Add the current node
+            # If there's a parent, add an edge
+            if parent is not None:
+                if parent == "":
+                 nx_tree.add_edge("root", ete_node.name)
+                else:
+                    nx_tree.add_edge(parent, ete_node.name)
+            # Recursively process child nodes
+            for child in ete_node.children:
+                ete_to_nx(child, ete_node.name)
+            
+        def remove_duplicate_matrices(matrix_list):
+            """
+            Removes duplicate numpy matrices from a list.
+            
+            Args:
+                matrix_list (list): A list of numpy matrices.
+
+            Returns:
+                list: A list with duplicates removed.
+            """
+            unique_matrices = []
+            seen = set()
+            
+            for matrix in matrix_list:
+                # Convert matrix to a tuple of tuples for hashable comparison
+                matrix_tuple = tuple(map(tuple, matrix))
+                if matrix_tuple not in seen:
+                    seen.add(matrix_tuple)
+                    unique_matrices.append(matrix)
+            
+            return unique_matrices
+        
+        #original_matrix = generate_perfect_phylogeny_matrix(AML99_tree)
+        ete3_tree = ppm_to_tree(mutation_trees[0])
+        ete_to_nx(ete3_tree)
+        spr_trees = generate_all_spr_trees_sim(nx_tree)
         
         max_likelihood = -np.inf
         best_solb = None
@@ -315,32 +422,31 @@ class solveLongitudinallyObservedPerfectPhylogeny():
 
         mutation_tree = mutation_trees[0]
         mutation_trees = [mutation_tree] #+ spr_trees
-        
 
-        
+        mutation_trees = remove_duplicate_matrices(mutation_trees)
         compass_flag = False
-        if compass_flag == False:
-            compass_clones = pd.read_csv(f"../threshold_sweep/Phyllochron_COMPASS/AML-99_{self.z}_B.csv").values[:,1:]
-            print(compass_clones)
+        #if compass_flag == False:
+            #compass_clones = pd.read_csv(f"../threshold_sweep/Phyllochron_COMPASS/AML-99_{self.z}_B.csv").values[:,1:]
+            #print(compass_clones)
         
-        for mutation_tree in mutation_trees:
+        for mutation_tree1 in mutation_trees:
             L = np.zeros((nclones, ncells))
             if self.coeff_mat is not None:
                 for cell in range(ncells):
-                    if compass_flag == False:
+                    #if compass_flag == False:
                         #best_clone = compass_clones[cell]
-                        best_clone = mutation_tree[np.argmax(self.compass_assignment[cell])].copy()
-                        reads = self.df_total_readcounts.loc[cell].values
-                        vreads = self.df_variant_readcounts.loc[cell].values
+                        #best_clone = mutation_tree[np.argmax(self.compass_assignment[cell])].copy()
+                        #reads = self.df_total_readcounts.loc[cell].values
+                        #vreads = self.df_variant_readcounts.loc[cell].values
 
-                        best_clone[reads <= 5] = -1
-                        mask = (best_clone != -1)  # Create a mask where b is not -1
+                        #best_clone[reads <= 5] = -1
+                        #mask = (best_clone != -1)  # Create a mask where b is not -1
                     for r in range(nclones):
                         if self.compass_assignment is not None:
-                            if compass_flag == False:
+                            if compass_flag == False and False:
                                 
                                 #if np.all((best_clone == 0) == (mutation_tree[r] == 0)) and np.all((best_clone == 1) == (mutation_tree[r] == 1)):
-                                if np.array_equal(best_clone[mask], mutation_tree[r][mask]):
+                                if np.array_equal(best_clone[mask], mutation_tree1[r][mask]):
                                     L[r][cell] = 0 #np.log(max(1e-50, self.compass_assignment[cell,r]))
                                 else:
                                     L[r][cell] = -1 #1e55 * np.log(max(1e-50, self.compass_assignment[cell,r]))
@@ -348,13 +454,15 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                             else:
                                 L[r][cell] = np.log(max(1e-50, self.compass_assignment[cell,r]))
                         else:
-                            L[r][cell] = np.dot(self.coeff_mat[cell], mutation_tree[r])
+                            print(mutation_tree1[r])
+                            print(self.coeff_mat[cell].shape)
+                            L[r][cell] = np.dot(self.coeff_mat[cell], mutation_tree1[r])
             else:
                 for cell in range(ncells):
                     for r in range(nclones):
                         zero_elem = np.where(self.df_character_matrix.values[cell] == 0, 1, 0)
                         one_elem = np.where(self.df_character_matrix.values[cell] == 1, 1, 0)
-                        L[r][cell] = self.fnweight * np.dot(zero_elem, mutation_tree[r]) + self.fpweight * np.dot(one_elem, mutation_tree[r])
+                        L[r][cell] = self.fnweight * np.dot(zero_elem, mutation_tree1[r]) + self.fpweight * np.dot(one_elem, mutation_tree1[r])
 
             pred_dict = defaultdict(list)
             dir_pred = defaultdict(list)
@@ -363,25 +471,25 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                 cand_par = None
                 for r2 in range(nclones):
                     if r != r2:
-                        if np.all(mutation_tree[r][self.mutation_tree[r2] == 1] == 1):
-                            distance = np.linalg.norm(mutation_tree[r2] - mutation_tree[r], ord=1)
-                            if distance < min_dist:
-                                min_dist = distance
-                                cand_par = r2
+                        if np.all(mutation_tree1[r][mutation_tree1[r2] == 1] == 1):
+                            distance = np.linalg.norm(mutation_tree1[r2] - mutation_tree1[r], ord=1)
+                            pred_dict[r].append((r2, distance))
+            
 
-                if cand_par is not None:
-                    pred_dict[r].append(cand_par)
+            for k in pred_dict.keys():
+                pred_dict[k] = [x[0] for x in sorted(pred_dict[k], key=lambda x: x[1])]
 
-            print(pred_dict)
 
             model = gp.Model('solveLongitudinallyObservedPerfectPhylogeny')
             model.setParam('TimeLimit', self.worklimit)
-
+            
             b = model.addVars(ncells, nclones, vtype=gp.GRB.BINARY, name='b')
             tau = model.addVars(nclones, ntimepoints + 1, vtype=gp.GRB.BINARY, name='tau')
             tau_pres = model.addVars(nclones, vtype=gp.GRB.BINARY, name='tau_pres')
             tau_pred  = model.addVars(nclones, ntimepoints + 1, vtype=gp.GRB.BINARY, name='tau_pred')
-            
+            gamma = model.addVars(nclones, nclones, vtype=gp.GRB.BINARY, name='gamma')
+
+
             # Initialize Trivially Longitudinally Observed Assignment
 
             if prev_solution is not None:
@@ -413,16 +521,17 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                         tau[j,t + 1].Start = 0
                         tau_pred[j,t + 1].Start = 0
 
+            #########################
+
+
             for i in range(ncells):
                 assignment_cons = gp.LinExpr()
                 for j in range(nclones):
                     assignment_cons += b[i,j]
+                    model.addConstr(tau[j,0] == 0)
+                    model.addConstr(tau_pred[j,0] == 0)
 
                 model.addConstr(assignment_cons == 1)
-
-            for j in range(nclones):
-                model.addConstr(tau[j,0] == 0)
-                model.addConstr(tau_pred[j,0] == 0)
 
             for t in range(ntimepoints):
                 for j in range(nclones):
@@ -433,20 +542,8 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                         model.addConstr(c_t_sum >= tau[j,t + 1])
                     else:
                         model.addConstr(c_t_sum >= int(self.threshold * self.sample_threshold[t]) * tau[j,t + 1])
-                    #model.addConstr(c_t_sum >= self.threshold * tau[j,t])
-            if self.iscloneConstrained == True:
-                pres_sum = gp.LinExpr()
-                for j in range(nclones):
-                    pres_sum += tau_pres[j]
-                model.addConstr(pres_sum == int(self.z))
+                        #model.addConstr(c_t_sum >= 10 * tau[j,t + 1])
 
-            for j in range(nclones):
-                for t in range(ntimepoints):
-                    for i in self.timepoint_cell_map[t]:
-                        model.addConstr(tau[j,t+1] >= b[i,j])
-                        model.addConstr(tau_pres[j] >= b[i,j])
-
-            
             for j in range(nclones):
                 pres_bound = gp.LinExpr()
                 for t in range(ntimepoints):
@@ -454,38 +551,66 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                     for i in self.timepoint_cell_map[t]:
                         u_bound += b[i,j]
                         pres_bound += b[i,j]
+                        # tau_pres is clone j present
+                        model.addConstr(tau[j,t+1] >= b[i,j])
+                        model.addConstr(tau_pres[j] >= b[i,j])
                     model.addConstr(tau[j,t + 1] <= u_bound)
                 model.addConstr(tau_pres[j] <= pres_bound)
+                    
+            if self.iscloneConstrained == True:
+                pres_sum = gp.LinExpr()
+                for j in range(nclones):
+                    pres_sum += tau_pres[j]
+                model.addConstr(pres_sum == int(self.z))
+
 
             if self.run_pp == False:
-                
+                # Permanent extinction condition
+                # tau[j,t] indicates if clone j is present at time t
                 for t1 in range(ntimepoints - 2):
                     for t2 in range(t1 + 1, ntimepoints - 1):
                         for t3 in range(t2 + 1, ntimepoints):
                             for j in range(nclones):
                                 model.addConstr(tau[j,t1 + 1] + (1 - tau[j,t2 + 1]) + tau[j,t3 + 1] <= 2)
                 
+                # tau_pred initialization 
                 for t in range(ntimepoints):
                     for j in range(nclones):
                         pred_cons = gp.LinExpr()
                         for pred in pred_dict[j]:
-                            model.addConstr(tau_pred[j,t + 1] >= tau[pred,t + 1])
-                            pred_cons += tau[pred,t + 1]
+                            model.addConstr(tau_pred[j,t + 1] <= tau[pred,t + 1] + (1 - gamma[j, pred]))
+                            model.addConstr(tau_pred[j,t + 1] >= tau[pred,t + 1] - (1-gamma[j, pred]))
 
+                            pred_cons += tau[pred,t + 1]
                         model.addConstr(tau_pred[j,t + 1] <= pred_cons)
 
+                # gamma construction
+                for i in range(nclones):
+                    for j in range(nclones):
+                        if j not in pred_dict[i]:
+                            model.addConstr(gamma[i,j] == 0)
 
-                for t1 in range(ntimepoints - 2):
-                    for t2 in range(t1, ntimepoints - 1):
-                        for j in range(nclones):
-                            model.addConstr(tau[j, t1 + 1] + (1 - tau_pred[j, t2 + 1]) + tau_pred[j, t2 + 2] <= 2)
+                for i in range(nclones):
+                    gamma_cons = gp.LinExpr()
+                    presence_cons = gp.LinExpr()
+                    for j in pred_dict[i]:
+                        gamma_cons += gamma[i,j]
+                        presence_cons += tau_pres[j]
+                        model.addConstr(gamma[i,j] <= tau_pres[j])
+                    
+                    model.addConstr(gamma_cons <= presence_cons)
+                    for j in pred_dict[i]:
+                        model.addConstr(gamma_cons >= tau_pres[j])
+
+                    for k in range(len(pred_dict[i])):
+                        for k_prime in range(0, k):
+                            model.addConstr(gamma[i,pred_dict[i][k]] <= 1 - tau_pres[pred_dict[i][k_prime]])
                 
-
                 for t1 in range(ntimepoints - 1):
                     for t2 in range(t1, ntimepoints - 1):
                         for j in range(nclones):
-                            model.addConstr(tau_pred[j, t1] + (1 - tau_pred[j, t1 + 1]) + (1 - tau[j, t2 ]) + tau[j, t2 + 1] <= 3)
-                
+                            model.addConstr(tau[j, t1 + 1] + (1 - tau_pred[j, t2 + 1]) + tau_pred[j, t2 + 2] <= 2)
+                            model.addConstr(tau_pred[j, t1 + 1] + (1 - tau_pred[j, t1 + 2]) + (1 - tau[j, t2 + 1]) + tau[j, t2 + 2] <= 3)
             obj_sum = gp.LinExpr()
 
             for i in range(ncells):
@@ -503,21 +628,28 @@ class solveLongitudinallyObservedPerfectPhylogeny():
             model.setParam(gp.GRB.Param.OptimalityTol, 1e-6)
             
             model.optimize()
-            solb = np.rint(np.reshape(model.getAttr('x', b).values(), (ncells, nclones)))
-            soltau = np.rint(np.reshape(model.getAttr('x', tau).values(), (nclones, ntimepoints + 1)))
-            soltaupred = np.rint(np.reshape(model.getAttr('x', tau_pred).values(), (nclones, ntimepoints + 1)))
-
+            solb = np.rint(np.reshape(list(model.getAttr('x', b).values()), (ncells, nclones)))
+            soltau = np.rint(np.reshape(list(model.getAttr('x', tau).values()), (nclones, ntimepoints + 1)))
+            soltaupred = np.rint(np.reshape(list(model.getAttr('x', tau_pred).values()), (nclones, ntimepoints + 1)))
+            solgamma = np.rint(np.reshape(list(model.getAttr('x', gamma).values()), (nclones, nclones)))
+            soltaupres = np.rint(np.reshape(list(model.getAttr('x', tau_pres).values()), (nclones)))
+            
+            print(soltau)
+            print(pred_dict)
             prev_solution = {"b": solb, "tau": soltau, "tau_pred": soltaupred}
 
             self.likelihood = model.ObjVal
             if self.likelihood > max_likelihood:
                 best_solb = solb
-                best_mutation_tree = mutation_tree
+                best_mutation_tree = mutation_tree1
                 max_likelihood = self.likelihood
 
-        print(soltau)
-        print(pred_dict)
-        print(best_mutation_tree)
+
+        #print(solgamma)
+        #print(soltau)
+
+        #print(soltaupred)
+
 
         """
 
@@ -540,13 +672,14 @@ class solveLongitudinallyObservedPerfectPhylogeny():
         """
         self.likelihood = max_likelihood
         
+
+        vals_dict = defaultdict(int)
         sol = np.zeros((self.ncells, self.nmutations))
         for i in range(ncells):
             for j in range(nclones):
                 if best_solb[i,j] > 0:
                     sol[i] = best_mutation_tree[j]
-
-        
+                    vals_dict[str(j) + "-t" + str(self.timepoints[i])] += 1
         if self.df_character_matrix is not None:
             df_solb = pd.DataFrame(sol, index = self.df_character_matrix.index, columns = self.df_character_matrix.columns, dtype=int)
         else:
@@ -632,7 +765,6 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                     if column in solT_mut.nodes:
                         raise NameError(f'{column} is being repeated')
                     solT_mut.add_edge(curr_node, column)
-                    print(curr_node, column)
                     
 
                     s.append(mapped_mutations[curr_node])
@@ -662,13 +794,10 @@ class solveLongitudinallyObservedPerfectPhylogeny():
 
                 clone_id.append(i)
 
-        print(mapped_mutations)
         df_edges = pd.DataFrame({"source": s, "target": t}).drop_duplicates()
-        print(df_edges)
         df_edges.to_csv(f'{prefix}_tree_edges.csv', index=False)
         df_prev = pd.DataFrame({"timepoint": timepoint, "clone_id": clone_id, "clonal_prev": clone_prev}) 
 
-        print(df_prev)
         df_prev.to_csv(f'{prefix}_clone_prev.csv', index=False)
 
         return solT_mut, solT_cell
