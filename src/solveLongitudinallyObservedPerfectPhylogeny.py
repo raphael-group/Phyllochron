@@ -78,7 +78,7 @@ class solveLongitudinallyObservedPerfectPhylogeny():
             self.mutation_list = list(df_total_readcounts.columns)
             bb_alpha = fp * ado_precision
             bb_beta = (1 - fp) * ado_precision
-            
+            omega = 8           
             coeff_mat = np.zeros((self.ncells, self.nmutations))
             for cell_idx, cell in enumerate(self.cell_list):
                 for mut_idx, mutation in enumerate(self.mutation_list):
@@ -86,8 +86,26 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                     variant_reads = df_variant_readcounts.loc[cell][mutation]
 
                     if self.use_COMPASS_likelihood:
-                        coeff = solveLongitudinallyObservedPerfectPhylogeny.compute_SNV_loglikelihoods(1, 1, total_reads - variant_reads,  variant_reads, cell_idx, 0.001, 0.001, self.fp + self.fn, 1)[0][0] - solveLongitudinallyObservedPerfectPhylogeny.compute_SNV_loglikelihoods(2, 0, total_reads - variant_reads,  variant_reads, cell_idx, 0.001, 0.001, self.fp + self.fn, 1)[0][0]
+                        coeff = solveLongitudinallyObservedPerfectPhylogeny.compute_SNV_loglikelihoods(1, 1, total_reads - variant_reads,  variant_reads, cell_idx, 0.01, 0.01, 1)[0][0] - solveLongitudinallyObservedPerfectPhylogeny.compute_SNV_loglikelihoods(2, 0, total_reads - variant_reads,  variant_reads, cell_idx, 0.01, 0.01, 1)[0][0]
                         coeff_mat[cell_idx, mut_idx] = coeff
+                        if np.isfinite(coeff) == False:
+                            print(variant_reads, total_reads, coeff)
+                        """
+                        if total_reads > 0:
+                            f = (variant_reads/total_reads) * (1-0.001) + ((total_reads-variant_reads)/total_reads) * 0.001
+                            alpha = f * omega
+                            beta = (1 - f) * omega
+
+                            # Null model: no mutation (f=0)
+
+                            log_prob_variant = betabinom.logpmf(variant_reads, total_reads, alpha, beta)
+                            log_prob_null = betabinom.logpmf(variant_reads, total_reads, 1, 1)
+                            
+                            coeff = log_prob_null - log_prob_variant 
+                            print(f, log_prob_variant, log_prob_null, variant_reads, total_reads)
+                            print(coeff)
+                            coeff_mat[cell_idx, mut_idx] = coeff
+                        """
                     else:
                         if total_reads > 0:
                             coeff = betabinom.logpmf(variant_reads, total_reads,1,1) - betabinom.logpmf(variant_reads, total_reads, bb_alpha, bb_beta)
@@ -96,6 +114,8 @@ class solveLongitudinallyObservedPerfectPhylogeny():
             self.coeff_mat = coeff_mat                    
         else:
             self.coeff_mat = None
+
+
         
         # gurobi parameters
         self.threads = threads
@@ -454,8 +474,6 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                             else:
                                 L[r][cell] = np.log(max(1e-50, self.compass_assignment[cell,r]))
                         else:
-                            print(mutation_tree1[r])
-                            print(self.coeff_mat[cell].shape)
                             L[r][cell] = np.dot(self.coeff_mat[cell], mutation_tree1[r])
             else:
                 for cell in range(ncells):
@@ -803,7 +821,7 @@ class solveLongitudinallyObservedPerfectPhylogeny():
         return solT_mut, solT_cell
 	
     @staticmethod
-    def compute_SNV_loglikelihoods(c_ref, c_alt, r, v, locus, dropout_rate_ref, dropout_rate_alt, sequencing_error_rate, n_cells):
+    def compute_SNV_loglikelihoods(c_ref, c_alt, r, v, locus, dropout_rate_ref, dropout_rate_alt, n_cells):
         def log_n_choose_k(n, k):
             return gammaln(n + 1) - (gammaln(k + 1) + gammaln(n - k + 1))
         # If homozygous, the copy number of the only allele is irrelevant for the allelic proportion
@@ -830,8 +848,8 @@ class solveLongitudinallyObservedPerfectPhylogeny():
                     continue
                             
                 seq_error_rates = [0.0] * n_cells
-                eps1 = sequencing_error_rate
-                eps2 = sequencing_error_rate
+                eps1 = 0.02 
+                eps2 = 0.06
                 omega = 50 if k == 0 or l == 0 else 8
                 
 

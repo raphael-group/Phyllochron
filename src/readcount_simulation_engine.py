@@ -180,17 +180,65 @@ def main(args):
 
 
     print(trivial_reduction_profile_map)
-
     character_matrix = np.zeros((t * ncells, nmutations))
 
     for tp in range(t):
+        n_clones = len(trivial_reduction_profile_map[tp]) + 1
+        proportion_rare = 0.05
+        if n_clones != 1:
+            
+            # Randomly select one clone to be rare
+            low_prob_idx = np.random.choice(n_clones)
 
+            # Sample random probabilities for all clones
+            prob_clones = np.random.rand(n_clones)
+
+            # Set chosen low-probability clone to exactly 0.1
+            prob_clones[low_prob_idx] = 0.0  # temporarily set to zero
+
+            # Apply minimum threshold to remaining clones
+            for idx in range(n_clones):
+                if idx != low_prob_idx:
+                    prob_clones[idx] = max(prob_clones[idx], proportion_rare)
+
+            # Normalize remaining clones to sum to (1 - 0.1)
+            prob_clones /= prob_clones.sum()
+            prob_clones *= (1.0 - proportion_rare)
+
+            # Now create the full probability vector
+            full_prob_clones = prob_clones.copy()
+            full_prob_clones[low_prob_idx] = proportion_rare
+            print(full_prob_clones)
+            # Calculate how many cells to assign to rare clone
+            n_low_prob_cells = int(proportion_rare * ncells)
+            n_remaining_cells = ncells - n_low_prob_cells
+
+            # Assign rare clone
+            assignments = [low_prob_idx] * n_low_prob_cells
+        else:
+            full_prob_clones = [1.0]
+            n_remaining_cells = ncells
+            assignments = []
+        # Assign remaining clones
+        remaining_assignments = np.random.choice(
+            np.arange(n_clones),
+            size=n_remaining_cells,
+            p=full_prob_clones
+        )
+
+        assignments.extend(remaining_assignments)
+        np.random.shuffle(assignments)
+
+        # Assign profiles
+        for i, clone_idx in enumerate(assignments):
+            character_matrix[tp * ncells + i] = profiles[clone_idx]
+        '''
         prob_clones = np.maximum(np.random.rand(len(trivial_reduction_profile_map[tp]) + 1), 0.05)
         normalized_prob_clones = prob_clones/prob_clones.sum()
         for i in range(ncells):
             #character_matrix[tp * ncells + i] = profiles[np.random.choice(continuous_growth_profile_map[tp])]
             character_matrix[tp * ncells + i] = profiles[np.random.choice([0] + trivial_reduction_profile_map[tp], p=normalized_prob_clones)]
-   
+        '''
     og_character_matrix = character_matrix.copy()
     
     df_profiles = pd.DataFrame(data=profiles.astype(int), index=list(range(nmutations + 1)), columns=mutation_names)
